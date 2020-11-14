@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "common",
+    "common/block-macros",
+    "server",
+    "client",
+]
+
+exclude = ["ecs"]

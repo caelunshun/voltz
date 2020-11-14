@@ -1,0 +1,9 @@
+[package]
+name = "orcs"
+version = "0.1.0"
+authors = ["caelunshun <caelunshun@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+ahash = "0.5"
+thiserror = "1"
