@@ -3,6 +3,8 @@
 
 pub mod block;
 pub mod chunk;
+pub mod world;
 
 pub use block::{blocks, BlockId};
-pub use chunk::Chunk;
+pub use chunk::{Chunk, ChunkPos};
+pub use world::{BlockPos, World, Zone};

@@ -10,7 +10,7 @@ edition = "2018"
 cargo-fuzz = true
 
 [dependencies]
-libfuzzer-sys = "0.3"
+libfuzzer-sys = { version = "0.3", features = ["arbitrary-derive"] }
 
 [dependencies.common]
 path = ".."
@@ -22,5 +22,17 @@ members = ["."]
 [[bin]]
 name = "chunk"
 path = "fuzz_targets/chunk.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "world"
+path = "fuzz_targets/world.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "zone"
+path = "fuzz_targets/zone.rs"
 test = false
 doc = false

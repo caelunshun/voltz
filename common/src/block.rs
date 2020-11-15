@@ -360,4 +360,16 @@ mod tests {
     fn registry_no_panic() {
         Lazy::force(&REGISTRY);
     }
+
+    #[test]
+    fn block_ids_continuous() {
+        assert_eq!(BlockId::new(blocks::Air).kind(), 0);
+        assert_eq!(BlockId::new(blocks::Air).state(), 0);
+
+        assert_eq!(BlockId::new(blocks::Dirt).kind(), 1);
+        assert_eq!(BlockId::new(blocks::Dirt).state(), 0);
+
+        assert!(BlockId::from_raw_parts(0, 0).is::<blocks::Air>());
+        assert!(BlockId::from_raw_parts(1, 0).is::<blocks::Dirt>());
+    }
 }

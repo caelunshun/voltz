@@ -7,12 +7,21 @@ pub const CHUNK_DIM: usize = 16;
 /// The volume of a chunk in blocks.
 pub const CHUNK_VOLUME: usize = CHUNK_DIM * CHUNK_DIM * CHUNK_DIM;
 
+/// Position of a chunk relative to the zone origin.
+/// Measured in units of CHUNK_DIM = 16 blocks.
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct ChunkPos {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
 /// The starting number of bits per block to use in a chunk.
 const INITIAL_BITS_PER_BLOCK: usize = 3;
 
-/// Efficiently and compactly a 16x16x16 chunk of blocks.
+/// Efficiently and compactly stores a 16x16x16 chunk of blocks.
 ///
-/// Internally, a chunk contains a packed array of bits and palette.
+/// Internally, a chunk contains a packed array of bits and a palette.
 /// Each entry in the packed array is an index into the palette, which
 /// is a `Vec<BlockId>`. For chunks with small numbers of blocks, we can
 /// use as few as 3-4 bits per block.
