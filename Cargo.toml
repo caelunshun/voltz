@@ -1,9 +1,9 @@
 [workspace]
 members = [
-    "common",
-    "common/block-macros",
-    "server",
-    "client",
+    "crates/common",
+    "crates/common/block-macros",
+    "crates/server",
+    "crates/client",
 ]
 
-exclude = ["ecs"]
+exclude = ["crates/ecs"]
