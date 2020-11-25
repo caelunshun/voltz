@@ -1,0 +1,5 @@
+inherits: cube.yml
+
+textures:
+  top: grass/top.png
+  all: dirt.png

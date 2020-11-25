@@ -1,0 +1,11 @@
+[package]
+name = "utils"
+version = "0.1.0"
+authors = ["caelunshun <caelunshun@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+
+[dev-dependencies]
+rand = "0.7"
+rand_pcg = "0.2"

@@ -1,0 +1,5 @@
+groups:
+  model/block/:
+    loader: BlockModel
+  texture/:
+    loader: Png

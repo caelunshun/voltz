@@ -1,0 +1,4 @@
+inherits: cube.yml
+
+textures:
+  all: dirt.png

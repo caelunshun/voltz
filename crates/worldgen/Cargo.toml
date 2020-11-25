@@ -1,0 +1,11 @@
+[package]
+name = "worldgen"
+version = "0.1.0"
+authors = ["caelunshun <caelunshun@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+common = { path = "../common" }
+rayon = "1"
+simdnoise = { git = "https://github.com/jackmott/rust-simd-noise" }
+simd = { package = "packed_simd_2", version = "0.3" }

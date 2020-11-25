@@ -1,6 +1,7 @@
 #![feature(const_generics)]
 #![allow(incomplete_features)]
 
+pub mod biome;
 pub mod block;
 pub mod chunk;
 pub mod world;

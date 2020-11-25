@@ -1,7 +1,9 @@
 [workspace]
 members = [
+    "crates/utils",
     "crates/common",
     "crates/common/block-macros",
+    "crates/worldgen",
     "crates/server",
     "crates/client",
 ]
