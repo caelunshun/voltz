@@ -8,6 +8,6 @@ edition = "2018"
 utils = { path = "../utils" }
 block-macros = { path = "./block-macros" }
 once_cell = "1"
-ahash = "0.5"
+ahash = "0.6"
 thiserror = "1"
 uuid = { version = "0.8", features = ["v4"] }

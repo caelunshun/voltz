@@ -14,12 +14,13 @@ checksum = "e8fd72866655d1904d6b0997d0b07ba561047d070fbe29de039031c641b61217"
 
 [[package]]
 name = "ahash"
-version = "0.5.7"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad4243ec6feddc812c0f442d9765374d250aba94e10ecf8b632e1b1c118547e8"
+checksum = "865f8b0b3fced577b7df82e9b0eb7609595d7209c0b39e78d0646672e244b1b1"
 dependencies = [
  "getrandom 0.2.0",
  "lazy_static",
+ "version_check",
 ]
 
 [[package]]
@@ -159,9 +160,10 @@ dependencies = [
 name = "client"
 version = "0.1.0"
 dependencies = [
- "ahash 0.5.7",
+ "ahash 0.6.1",
  "anyhow",
  "fontdue",
+ "futures-executor",
  "guillotiere",
  "image",
  "log",
@@ -220,7 +222,7 @@ dependencies = [
 name = "common"
 version = "0.1.0"
 dependencies = [
- "ahash 0.5.7",
+ "ahash 0.6.1",
  "block-macros",
  "once_cell",
  "thiserror",
@@ -1223,6 +1225,7 @@ dependencies = [
  "bitflags",
  "lazy_static",
  "libc",
+ "raw-window-handle",
  "sdl2-sys",
 ]
 

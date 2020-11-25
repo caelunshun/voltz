@@ -6,12 +6,14 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YamlModel {
     /// Optionally inherit from the model with the given path.
+    #[serde(default)]
     pub inherits: Option<String>,
     /// Texture variables which are declared but not set to a value.
     /// Used for inheritance.
     #[serde(default)]
     pub texture_parameters: HashMap<String, TextureParam>,
     /// Initialize texture parameters (potentially those of the parent).
+    #[serde(default)]
     pub textures: HashMap<String, String>,
     /// A list of rectangular prisms which define this block model.
     #[serde(default)]

@@ -1,3 +1,5 @@
+use mesher::ChunkMesher;
+
 use super::utils::TextureArray;
 
 mod mesher;
@@ -8,4 +10,7 @@ mod mesher;
 /// 3) Rendering each visible chunk.
 pub struct ChunkRenderer {
     block_textures: TextureArray,
+    mesher: ChunkMesher,
 }
+
+impl ChunkRenderer {}

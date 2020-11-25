@@ -9,6 +9,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use walkdir::WalkDir;
 
 pub mod model;
+pub mod texture;
 
 pub trait AssetKind: Any + Send + Sync {}
 impl<T> AssetKind for T where T: Any + Send + Sync {}

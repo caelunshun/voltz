@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 wgpu = "0.6"
-sdl2 = "0.34"
+sdl2 = { version = "0.34", features = ["raw-window-handle"] }
 fontdue = "0.4"
 tiny-skia = "0.2"
 image = { version = "0.23", default-features = false, features = ["png"] }
@@ -14,10 +14,12 @@ guillotiere = "0.6"
 
 anyhow = "1"
 thiserror = "1"
-ahash = "0.5"
+ahash = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8"
 walkdir = "2"
 
 log = "0.4"
 simple_logger = "1"
+
+futures-executor = "0.3"
