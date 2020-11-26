@@ -31,7 +31,7 @@ impl ChunkRenderer {
         let (block_textures, block_texture_indexes) =
             create_block_textures(resources, assets, encoder)
                 .context("failed to create block texture array")?;
-        let mesher = ChunkMesher::new(assets, |texture_name| {
+        let mesher = ChunkMesher::new(assets, resources, |texture_name| {
             block_texture_indexes.get(texture_name).copied()
         })
         .context("failed to initialize chunk mesher")?;

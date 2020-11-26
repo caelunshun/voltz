@@ -9,7 +9,7 @@ common = { path = "../common" }
 utils = { path = "../utils" }
 
 wgpu = "0.6"
-glam = "0.10"
+glam = { version = "0.10", features = ["bytemuck"] }
 sdl2 = { version = "0.34", features = ["raw-window-handle"] }
 fontdue = "0.4"
 tiny-skia = "0.2"
@@ -23,8 +23,11 @@ bumpalo = { path = "../../../bumpalo" }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8"
 walkdir = "2"
+bytemuck = { version = "1", features = ["derive"] }
 
 log = "0.4"
 simple_logger = "1"
 
+rayon = "1"
+crossbeam-queue = "0.3"
 futures-executor = "0.3"

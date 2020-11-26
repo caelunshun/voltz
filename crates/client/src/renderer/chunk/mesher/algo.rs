@@ -1,14 +1,12 @@
 //! The implementation for the chunk mesher algorithm.
 
+use ahash::AHashMap;
 use bumpalo::Bump;
 use common::{chunk::CHUNK_DIM, chunk::CHUNK_VOLUME, Chunk};
 use glam::Vec3;
 use utils::BitSet;
 
-use super::{
-    compile::{CompiledModel, Prism},
-    Mesher,
-};
+use super::compile::{CompiledModel, Prism};
 
 /// A generated chunk mesh.
 #[derive(Debug)]
@@ -83,7 +81,6 @@ impl Mesh<'_> {
     }
 
     pub fn push_quad(&mut self, vertices: [RawVertex; 4]) {
-        self.vertices.reserve(6);
         self.vertices.extend_from_slice(&[
             vertices[0],
             vertices[1],
@@ -117,7 +114,8 @@ fn vec3(in_steps: [u8; 3]) -> Vec3 {
     )
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, bytemuck::Zeroable, bytemuck::Pod)]
+#[repr(C)]
 pub struct RawVertex {
     pub pos: Vec3,
     pub texcoord: Vec3,
@@ -267,7 +265,11 @@ fn mesh_greedy(state: &mut State, pos: [usize; 3], palette_index: usize, _prism:
 }
 
 /// Meshes a chunk: converts a volume of blocks to a [`Mesh`].
-pub(super) fn mesh<'bump>(mesher: &Mesher, chunk: &'bump Chunk, bump: &'bump Bump) -> Mesh<'bump> {
+pub(super) fn mesh<'bump>(
+    models: &AHashMap<String, CompiledModel>,
+    chunk: &'bump Chunk,
+    bump: &'bump Bump,
+) -> Mesh<'bump> {
     let mesh = Mesh {
         vertices: Vec::new_in(bump),
     };
@@ -288,12 +290,9 @@ pub(super) fn mesh<'bump>(mesher: &Mesher, chunk: &'bump Chunk, bump: &'bump Bum
             .copied()
             .enumerate()
             .map(|(i, block)| {
-                let model = mesher
-                    .models
+                let model = models
                     .get(block.descriptor().slug())
-                    .unwrap_or_else(|| {
-                        mesher.models.get("unknown").expect("missing unknown model")
-                    });
+                    .unwrap_or_else(|| models.get("unknown").expect("missing unknown model"));
                 mesh_function(model, i, bump)
             }),
     );
@@ -316,9 +315,8 @@ pub(super) fn mesh<'bump>(mesher: &Mesher, chunk: &'bump Chunk, bump: &'bump Bum
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, time::Instant};
+    use std::time::Instant;
 
-    use ahash::AHashMap;
     use common::{blocks, BlockId};
 
     use super::*;
@@ -345,11 +343,10 @@ mod tests {
                 }],
             },
         );
-        let mesher = Mesher { models };
 
         let bump = Bump::new();
         let start = Instant::now();
-        let mesh = mesh(&mesher, &chunk, &bump);
+        let mesh = mesh(&models, &chunk, &bump);
         println!("Took {:?}", start.elapsed());
         /*let obj = mesh.to_obj();
         fs::write("mesh.obj", obj.as_bytes()).unwrap();*/
