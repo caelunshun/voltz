@@ -44,6 +44,7 @@ where
     ///
     /// # Panics
     /// Panics if `x >= self.capacity()`.
+    #[inline]
     pub fn insert(&mut self, x: usize) -> bool {
         let (u64, bit) = self.index(x).unwrap_or_else(|| {
             panic!(
@@ -61,6 +62,7 @@ where
     /// Returns whether the bitset contains the given value.
     ///
     /// Returns `false` of `x >= self.capacity()`.
+    #[inline]
     pub fn contains(&self, x: usize) -> bool {
         let (u64, bit) = match self.index(x) {
             Some(index) => index,
@@ -75,6 +77,7 @@ where
     /// Returns whether the bitset previously contained `x`.
     ///
     /// Does nothing and returns `false` if `x >= self.capacity()`.
+    #[inline]
     pub fn remove(&mut self, x: usize) -> bool {
         let (u64, bit) = match self.index(x) {
             Some(index) => index,
@@ -96,6 +99,7 @@ where
     }
 
     /// Gets the next element whose value is at least `min`.
+    #[inline]
     pub fn next(&self, min: usize) -> Option<usize> {
         let (u64, mut min_bit) = self.index(min)?;
 
@@ -127,6 +131,7 @@ where
 
     /// Returns the  capacity of this bitset, which is the
     /// greatest possible value plus one.
+    #[inline]
     pub fn capacity(&self) -> usize {
         self.values.len() * 64
     }

@@ -1,7 +1,7 @@
 //! The implementation for the chunk mesher algorithm.
 
 use bumpalo::Bump;
-use common::{chunk::CHUNK_DIM, chunk::CHUNK_VOLUME, BlockId, Chunk};
+use common::{chunk::CHUNK_DIM, chunk::CHUNK_VOLUME, Chunk};
 use glam::Vec3;
 use utils::BitSet;
 
@@ -21,121 +21,61 @@ impl Mesh<'_> {
         // TODO: figure out how to move this into a function.
         let offset = offset + vec3(prism.offset);
         let size = vec3(prism.extent);
+
+        let t1 = glam::vec3(0., 0., prism.textures[0] as f32);
+        let t2 = glam::vec3(1., 0., prism.textures[0] as f32);
+        let t3 = glam::vec3(1., 1., prism.textures[0] as f32);
+        let t4 = glam::vec3(0., 1., prism.textures[0] as f32);
+        let ts = [t1, t2, t3, t4];
+
+        self.push_cube(offset, size, ts);
+    }
+
+    pub fn push_cube(&mut self, offset: Vec3, size: Vec3, ts: [Vec3; 4]) {
+        let x0y0z0 = offset;
+        let x1y0z0 = offset + size * glam::vec3(1., 0., 0.);
+        let x1y0z1 = offset + size * glam::vec3(1., 0., 1.);
+        let x0y0z1 = offset + size * glam::vec3(0., 0., 1.);
+
+        let x0y1z0 = offset + size * glam::vec3(0., 1., 0.);
+        let x1y1z0 = offset + size * glam::vec3(1., 1., 0.);
+        let x1y1z1 = offset + size * glam::vec3(1., 1., 1.);
+        let x0y1z1 = offset + size * glam::vec3(0., 1., 1.);
+
+        fn quad(corners: &[Vec3; 4], ts: &[Vec3; 4]) -> [RawVertex; 4] {
+            [
+                RawVertex {
+                    pos: corners[0],
+                    texcoord: ts[0],
+                },
+                RawVertex {
+                    pos: corners[1],
+                    texcoord: ts[1],
+                },
+                RawVertex {
+                    pos: corners[2],
+                    texcoord: ts[2],
+                },
+                RawVertex {
+                    pos: corners[3],
+                    texcoord: ts[3],
+                },
+            ]
+        }
+
         let quads = [
-            // Top face
-            [
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 1., 0.),
-                    texcoord: glam::vec3(0., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 1., 0.),
-                    texcoord: glam::vec3(1., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 1., 1.),
-                    texcoord: glam::vec3(1., 1., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 1., 1.),
-                    texcoord: glam::vec3(0., 1., prism.textures[0] as f32),
-                },
-            ],
-            // Bottom face
-            [
-                RawVertex {
-                    pos: offset,
-                    texcoord: glam::vec3(0., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 0., 0.),
-                    texcoord: glam::vec3(1., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 0., 1.),
-                    texcoord: glam::vec3(1., 1., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 0., 1.),
-                    texcoord: glam::vec3(0., 1., prism.textures[0] as f32),
-                },
-            ],
-            // Positive X
-            [
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 0., 0.),
-                    texcoord: glam::vec3(0., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 0., 1.),
-                    texcoord: glam::vec3(1., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 1., 1.),
-                    texcoord: glam::vec3(1., 1., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 1., 0.),
-                    texcoord: glam::vec3(0., 1., prism.textures[0] as f32),
-                },
-            ],
+            // Bottom
+            quad(&[x0y0z0, x1y0z0, x1y0z1, x0y0z1], &ts),
+            // Top
+            quad(&[x0y1z0, x1y1z0, x1y1z1, x0y1z0], &ts),
             // Negative X
-            [
-                RawVertex {
-                    pos: offset,
-                    texcoord: glam::vec3(0., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 0., 1.),
-                    texcoord: glam::vec3(1., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 1., 1.),
-                    texcoord: glam::vec3(1., 1., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 1., 0.),
-                    texcoord: glam::vec3(0., 1., prism.textures[0] as f32),
-                },
-            ],
-            // Positive Z
-            [
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 0., 1.),
-                    texcoord: glam::vec3(0., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 0., 1.),
-                    texcoord: glam::vec3(1., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 1., 1.),
-                    texcoord: glam::vec3(1., 1., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 1., 1.),
-                    texcoord: glam::vec3(0., 1., prism.textures[0] as f32),
-                },
-            ],
+            quad(&[x0y0z0, x0y1z0, x0y1z1, x0y0z1], &ts),
+            // Positive X
+            quad(&[x1y0z0, x1y1z0, x1y1z1, x1y0z1], &ts),
             // Negative Z
-            [
-                RawVertex {
-                    pos: offset,
-                    texcoord: glam::vec3(0., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 0., 0.),
-                    texcoord: glam::vec3(1., 0., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(1., 1., 0.),
-                    texcoord: glam::vec3(1., 1., prism.textures[0] as f32),
-                },
-                RawVertex {
-                    pos: offset + size * glam::vec3(0., 1., 0.),
-                    texcoord: glam::vec3(0., 1., prism.textures[0] as f32),
-                },
-            ],
+            quad(&[x0y0z0, x1y0z0, x1y1z0, x0y1z0], &ts),
+            // Positive Z
+            quad(&[x0y0z1, x1y0z1, x1y1z1, x0y1z1], &ts),
         ];
         for &quad in &quads {
             self.push_quad(quad);
@@ -143,6 +83,7 @@ impl Mesh<'_> {
     }
 
     pub fn push_quad(&mut self, vertices: [RawVertex; 4]) {
+        self.vertices.reserve(6);
         self.vertices.extend_from_slice(&[
             vertices[0],
             vertices[1],
@@ -221,14 +162,22 @@ impl<'a> State<'a> {
 
 fn mesh_function<'a, 'bump>(
     model: &'a CompiledModel,
-    _block: BlockId,
+    palette_index: usize,
     _bump: &'bump Bump,
 ) -> Box<dyn FnMut(&mut State, [usize; 3]) + 'a> {
     if model.prisms.is_empty() {
         Box::new(mesh_noop)
+    } else if is_full_cube(model) {
+        Box::new(move |state, pos| mesh_greedy(state, pos, palette_index, &model.prisms[0]))
     } else {
         Box::new(move |state, pos| mesh_naive(state, pos, &model.prisms))
     }
+}
+
+fn is_full_cube(model: &CompiledModel) -> bool {
+    model.prisms.len() == 1
+        && model.prisms[0].extent == [64, 64, 64]
+        && model.prisms[0].offset == [0, 0, 0]
 }
 
 /// Mesher function which just clears the block from
@@ -251,6 +200,72 @@ fn mesh_naive(state: &mut State, pos: [usize; 3], prisms: &[Prism]) {
     state.mark_finished(pos);
 }
 
+/// Mesh function which uses a greedy algorithm
+/// to mesh as many blocks as possible with a single prism.
+///
+/// Only works on full cubes (1x1x1) for now.
+fn mesh_greedy(state: &mut State, pos: [usize; 3], palette_index: usize, _prism: &Prism) {
+    // Extend the block in the X, then the Z, then the Y axes.
+    fn index(x: usize, y: usize, z: usize) -> usize {
+        y * CHUNK_DIM * CHUNK_DIM + z * CHUNK_DIM + x
+    }
+
+    let indexes = state.chunk.indexes();
+
+    // X
+    let mut x = pos[0];
+    while x + 1 < 16 {
+        let block = indexes.get(index(x + 1, pos[1], pos[2])).unwrap() as usize;
+        if block != palette_index {
+            break;
+        }
+        x += 1;
+    }
+
+    // Z
+    let mut z = pos[2];
+    while z + 1 < 16 {
+        let matches = (pos[0]..=x)
+            .all(|x| indexes.get(index(x, pos[1], z + 1)).unwrap() as usize == palette_index);
+        if matches {
+            z += 1;
+        } else {
+            break;
+        }
+    }
+
+    // Y
+    let mut y = pos[1];
+    while y + 1 < 16 {
+        let matches = (pos[0]..=x)
+            .flat_map(|x| (pos[2]..=z).map(move |z| (x, z)))
+            .all(|(x, z)| indexes.get(index(x, y + 1, z)).unwrap() as usize == palette_index);
+        if matches {
+            y += 1;
+        } else {
+            break;
+        }
+    }
+
+    // Push final prism to the mesh.
+    let offset = Vec3::new(pos[0] as f32, pos[1] as f32, pos[2] as f32);
+    let size = Vec3::new(
+        (x - pos[0] + 1) as f32,
+        (y - pos[1] + 1) as f32,
+        (z - pos[2] + 1) as f32,
+    );
+    state.mesh.push_cube(offset, size, [Vec3::zero(); 4]);
+
+    // Mark processed blocks as finished.
+    for y in pos[1]..=y {
+        for z in pos[2]..=z {
+            for x in pos[0]..=x {
+                state.mark_finished([x, y, z]);
+            }
+        }
+    }
+}
+
 /// Meshes a chunk: converts a volume of blocks to a [`Mesh`].
 pub(super) fn mesh<'bump>(mesher: &Mesher, chunk: &'bump Chunk, bump: &'bump Bump) -> Mesh<'bump> {
     let mesh = Mesh {
@@ -266,13 +281,22 @@ pub(super) fn mesh<'bump>(mesher: &Mesher, chunk: &'bump Chunk, bump: &'bump Bum
     };
 
     let mut mesh_fns = Vec::new_in(bump);
-    mesh_fns.extend(chunk.palette().iter().copied().map(|block| {
-        let model = mesher
-            .models
-            .get(block.descriptor().slug())
-            .unwrap_or_else(|| mesher.models.get("unknown").expect("missing unknown model"));
-        mesh_function(model, block, bump)
-    }));
+    mesh_fns.extend(
+        chunk
+            .palette()
+            .iter()
+            .copied()
+            .enumerate()
+            .map(|(i, block)| {
+                let model = mesher
+                    .models
+                    .get(block.descriptor().slug())
+                    .unwrap_or_else(|| {
+                        mesher.models.get("unknown").expect("missing unknown model")
+                    });
+                mesh_function(model, i, bump)
+            }),
+    );
 
     let indexes = chunk.indexes();
     let mut pos = 0;
@@ -292,14 +316,12 @@ pub(super) fn mesh<'bump>(mesher: &Mesher, chunk: &'bump Chunk, bump: &'bump Bum
 
 #[cfg(test)]
 mod tests {
-    /*
-    use std::fs;
+    use std::{fs, time::Instant};
 
     use ahash::AHashMap;
-    use common::blocks;
+    use common::{blocks, BlockId};
 
     use super::*;
-
 
     #[test]
     fn dump_mesh() {
@@ -326,10 +348,11 @@ mod tests {
         let mesher = Mesher { models };
 
         let bump = Bump::new();
+        let start = Instant::now();
         let mesh = mesh(&mesher, &chunk, &bump);
-
-        let obj = mesh.to_obj();
-        fs::write("mesh.obj", obj.as_bytes()).unwrap();
+        println!("Took {:?}", start.elapsed());
+        /*let obj = mesh.to_obj();
+        fs::write("mesh.obj", obj.as_bytes()).unwrap();*/
+        let _ = mesh;
     }
-    */
 }

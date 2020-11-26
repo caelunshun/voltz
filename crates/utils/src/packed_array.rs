@@ -27,6 +27,7 @@ impl PackedArray {
     }
 
     /// Gets the value at the given index.
+    #[inline]
     pub fn get(&self, index: usize) -> Option<u64> {
         if index >= self.len() {
             return None;
@@ -42,6 +43,7 @@ impl PackedArray {
     ///
     /// # Panics
     /// Panics if `index >= self.length()` or `value > self.max_value()`.
+    #[inline]
     pub fn set(&mut self, index: usize, value: u64) {
         assert!(
             index < self.len(),
@@ -116,21 +118,25 @@ impl PackedArray {
     }
 
     /// Returns the maximum value of an integer in this packed array.
+    #[inline]
     pub fn max_value(&self) -> u64 {
         self.mask()
     }
 
     /// Returns the length of this packed array.
+    #[inline]
     pub fn len(&self) -> usize {
         self.length
     }
 
     /// Determines whether the length of this array is 0.
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     /// Returns the number of bits used to represent each value.
+    #[inline]
     pub fn bits_per_value(&self) -> usize {
         self.bits_per_value
     }
