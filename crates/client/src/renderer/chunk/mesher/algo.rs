@@ -1,4 +1,4 @@
-//! The implementation for offset: (), extent: (), textures: () offset: (), extent: (), textures: () the chunk mesher algorithm.
+//! The implementation for the chunk mesher algorithm.
 
 use bumpalo::Bump;
 use common::{chunk::CHUNK_DIM, chunk::CHUNK_VOLUME, BlockId, Chunk};
