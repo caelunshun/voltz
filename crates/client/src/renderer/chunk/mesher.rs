@@ -3,6 +3,7 @@ use std::{iter, ops::Deref, sync::Arc};
 use ahash::AHashMap;
 use common::{Chunk, ChunkPos};
 use crossbeam_queue::SegQueue;
+use wgpu::util::DeviceExt;
 
 use crate::{
     asset::{model::YamlModel, Asset, Assets},
@@ -111,18 +112,14 @@ struct Mesher {
 impl Mesher {
     pub fn upload(&self, label: &str, mesh: &algo::Mesh) -> GpuMesh {
         let vertices: &[u8] = bytemuck::cast_slice(mesh.vertices.as_slice());
-        let vertex_buffer = self
-            .resources
-            .device()
-            .create_buffer(&wgpu::BufferDescriptor {
-                label: Some(label),
-                size: vertices.len() as u64,
-                usage: wgpu::BufferUsage::COPY_DST | wgpu::BufferUsage::VERTEX,
-                mapped_at_creation: false,
-            });
-        self.resources
-            .queue()
-            .write_buffer(&vertex_buffer, 0, vertices);
+        let vertex_buffer =
+            self.resources
+                .device()
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some(label),
+                    contents: vertices,
+                    usage: wgpu::BufferUsage::VERTEX,
+                });
 
         GpuMesh { vertex_buffer }
     }
