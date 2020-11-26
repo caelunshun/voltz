@@ -4,7 +4,7 @@
 use anyhow::{anyhow, Context};
 use asset::{model::YamlModel, texture::PngLoader, Assets, YamlLoader};
 use renderer::Renderer;
-use sdl2::{video::Window, EventPump};
+use sdl2::{event::Event, video::Window, EventPump};
 use simple_logger::SimpleLogger;
 
 mod asset;
@@ -17,12 +17,25 @@ pub struct Client {
     // SDL2 state
     window: Window,
     event_pump: EventPump,
+
+    open: bool,
 }
 
 impl Client {
     pub fn run(mut self) -> anyhow::Result<()> {
-        log::info!("{:#?}", self.renderer);
+        while self.open {
+            self.handle_events();
+        }
         Ok(())
+    }
+
+    fn handle_events(&mut self) {
+        for event in self.event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. } => self.open = false,
+                _ => (),
+            }
+        }
     }
 }
 
@@ -41,6 +54,8 @@ fn main() -> anyhow::Result<()> {
 
         window,
         event_pump,
+
+        open: true,
     };
     client.run()
 }
@@ -48,7 +63,7 @@ fn main() -> anyhow::Result<()> {
 fn load_assets() -> anyhow::Result<Assets> {
     let mut assets = Assets::new();
     assets
-        .add_loader("BlockModel", YamlLoader::<YamlModel>::new())
+        .add_loader("YamlModel", YamlLoader::<YamlModel>::new())
         .add_loader("Png", PngLoader::new());
     assets.load_dir("assets").context("failed to load assets")?;
     Ok(assets)

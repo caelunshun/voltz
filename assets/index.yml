@@ -1,5 +1,5 @@
 groups:
-  model/block/:
-    loader: BlockModel
+  model/:
+    loader: YamlModel
   texture/:
     loader: Png
