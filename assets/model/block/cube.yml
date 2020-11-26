@@ -1,6 +1,8 @@
+abstract: true
 texture_params:
   # texture applied to all faces (can be overriden)
   all:
+    default: null
   top:
     default: all
   bottom:

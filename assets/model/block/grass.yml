@@ -1,4 +1,4 @@
-inherits: cube.yml
+inherits: cube
 
 textures:
   top: grass/top.png

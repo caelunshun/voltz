@@ -1,0 +1,12 @@
+[package]
+name = "protocol"
+version = "0.1.0"
+authors = ["caelunshun <caelunshun@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+common = { path = "../common" }
+
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+flume = { version = "0.9", default-features = false }

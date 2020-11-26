@@ -6,9 +6,12 @@ use sdl2::video::Window;
 
 use crate::asset::Assets;
 
+use self::chunk::ChunkRenderer;
+
 mod chunk;
 mod utils;
 
+#[derive(Debug)]
 pub struct Resources {
     adapter: wgpu::Adapter,
     device: wgpu::Device,
@@ -34,18 +37,20 @@ impl Resources {
     }
 }
 
+#[derive(Debug)]
 pub struct Renderer {
     resources: Arc<Resources>,
-    // chunk_renderer: ChunkRenderer,
+    chunk_renderer: ChunkRenderer,
 }
 
 impl Renderer {
-    pub fn new(window: &Window, _assets: &Assets) -> anyhow::Result<Self> {
+    pub fn new(window: &Window, assets: &Assets) -> anyhow::Result<Self> {
         let instance = wgpu::Instance::new(wgpu::BackendBit::PRIMARY);
         log::info!(
-            "Available adapters: {:?}",
+            "Available adapters: {:#?}",
             instance
                 .enumerate_adapters(wgpu::BackendBit::PRIMARY)
+                .map(|adapter| adapter.get_info())
                 .collect::<Vec<_>>()
         );
         let surface = block_on(async {
@@ -57,7 +62,7 @@ impl Renderer {
             compatible_surface: Some(&surface),
         }))
         .ok_or_else(|| anyhow!("failed to select a suitable adapter"))?;
-        log::info!("Selected adapter: {:?}", adapter);
+        log::info!("Selected adapter: {:#?}", adapter.get_info());
 
         let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
@@ -69,15 +74,26 @@ impl Renderer {
         ))
         .context("failed to create device")?;
 
-        let resources = Resources {
+        let resources = Arc::new(Resources {
             adapter,
             device,
             queue,
             surface,
-        };
+        });
+
+        let mut init_encoder =
+            resources
+                .device()
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("init_encoder"),
+                });
+
+        let chunk_renderer = ChunkRenderer::new(&resources, assets, &mut init_encoder)
+            .context("failed to initialize chunk renderer")?;
 
         Ok(Self {
-            resources: Arc::new(resources),
+            resources,
+            chunk_renderer,
         })
     }
 }

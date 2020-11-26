@@ -1,4 +1,4 @@
-inherits: cube.yml
+inherits: cube
 
 textures:
-  all: missing_texture.png
+  all: unknown.png

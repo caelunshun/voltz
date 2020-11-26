@@ -18,6 +18,7 @@ mod compile;
 ///
 /// This struct stores immutable state internally: it contains the compiled
 /// block models.
+#[derive(Debug)]
 pub struct ChunkMesher(Arc<Mesher>);
 
 impl ChunkMesher {
@@ -30,12 +31,21 @@ impl ChunkMesher {
 
         let models: AHashMap<String, Asset<YamlModel>> = assets
             .iter_prefixed::<YamlModel>(prefix)
-            .map(|(name, model)| (name.to_owned(), model))
+            .map(|(name, model)| {
+                (
+                    name.strip_prefix(prefix)
+                        .expect("prefix")
+                        .strip_suffix(".yml")
+                        .expect("suffix")
+                        .to_owned(),
+                    model,
+                )
+            })
             .collect();
 
         let models = compile::compile(
             models.keys().map(String::as_str),
-            |model| models.get(model).map(Asset::deref).cloned(),
+            |model| models.get(model).map(Asset::deref).map(YamlModel::clone),
             get_texture_index,
         )?;
 
@@ -43,6 +53,7 @@ impl ChunkMesher {
     }
 }
 
+#[derive(Debug)]
 struct Mesher {
     /// The compiled block models. This maps block slug
     /// to its model.

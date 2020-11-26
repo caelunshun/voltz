@@ -21,6 +21,7 @@ pub struct Client {
 
 impl Client {
     pub fn run(mut self) -> anyhow::Result<()> {
+        log::info!("{:#?}", self.renderer);
         Ok(())
     }
 }

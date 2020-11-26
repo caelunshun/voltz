@@ -5,13 +5,18 @@ use serde::{Deserialize, Serialize};
 /// A block model loaded from asset/model/block/*.yml.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YamlModel {
+    /// If `true`, this model is only used by other models as a parent
+    /// class/model, and it will not be compiled.
+    #[serde(rename = "abstract")]
+    #[serde(default)]
+    pub is_abstract: bool,
     /// Optionally inherit from the model with the given path.
     #[serde(default)]
     pub inherits: Option<String>,
     /// Texture variables which are declared but not set to a value.
     /// Used for inheritance.
     #[serde(default)]
-    pub texture_parameters: HashMap<String, TextureParam>,
+    pub texture_params: HashMap<String, TextureParam>,
     /// Initialize texture parameters (potentially those of the parent).
     #[serde(default)]
     pub textures: HashMap<String, String>,
@@ -24,6 +29,7 @@ pub struct YamlModel {
 pub struct TextureParam {
     /// A default texture parameter to defer to if
     /// this parameter is not set.
+    #[serde(default)]
     pub default: Option<String>,
 }
 

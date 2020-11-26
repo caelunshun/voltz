@@ -9,6 +9,7 @@ pub type Index = u32;
 /// are stable.
 ///
 /// Each texture in the array must have the same size and format.
+#[derive(Debug)]
 pub struct TextureArray {
     texture: wgpu::Texture,
     desc: wgpu::TextureDescriptor<'static>,
@@ -36,7 +37,7 @@ impl TextureArray {
             resources,
             texture,
             desc,
-            free: (0..START_CAPACITY).collect(),
+            free: (0..START_CAPACITY).rev().collect(),
         }
     }
 

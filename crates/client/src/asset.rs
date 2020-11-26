@@ -144,6 +144,7 @@ impl Assets {
             let asset = loader
                 .load(&bytes)
                 .with_context(|| format!("failed to load '{}'", path.display()))?;
+            let path = path.strip_prefix(directory)?;
             assets.push((path.to_path_buf(), asset));
         }
 

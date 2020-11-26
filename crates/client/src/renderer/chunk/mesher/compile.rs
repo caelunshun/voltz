@@ -10,11 +10,13 @@ use crate::asset::model::YamlModel;
 /// compiled format does not include inheritance.
 ///
 /// All units are measured in stops of 1/64 block.
+#[derive(Debug)]
 pub struct CompiledModel {
     /// The rectangular prisms composing this model.
     pub prisms: Vec<Prism>,
 }
 
+#[derive(Debug)]
 pub struct Prism {
     /// Offset in stops from the block origin of the minimum coordinate.
     pub offset: [u8; 3],
@@ -38,8 +40,13 @@ impl Compiler {
         name: &str,
         get_model: &impl Fn(&str) -> Option<YamlModel>,
         get_texture_index: &impl Fn(&str) -> Option<u32>,
-    ) -> anyhow::Result<CompiledModel> {
+    ) -> anyhow::Result<Option<CompiledModel>> {
         let model = get_model(name).ok_or_else(|| anyhow!("missing model '{}'", name))?;
+        if model.is_abstract {
+            // Model is only used for inheritance. Don't compile it.
+            return Ok(None);
+        }
+
         let model = self
             .make_inherited(name, &model, get_model)
             .with_context(|| format!("failed to apply inheritance for model '{}'", name))?;
@@ -65,30 +72,31 @@ impl Compiler {
             prisms.push(prism);
         }
 
-        todo!()
+        Ok(Some(CompiledModel { prisms }))
     }
 
     fn determine_texture<'b>(model: &'b YamlModel, texture_param: &str) -> anyhow::Result<&'b str> {
         // Determine the texture to use:
         // * If the model's textures contains the parameter, use that texture.
         // * Otherwise, default to the default value for this texture argument.
-        model
-            .textures
-            .get(texture_param)
-            .or_else(|| {
-                model
-                    .texture_parameters
-                    .get(texture_param)
-                    .map(|param| param.default.as_ref())
-                    .flatten()
-            })
-            .ok_or_else(|| {
-                anyhow!(
-                    "could not determine texture to use for texture parameter '{}'",
+        if let Some(texture) = model.textures.get(texture_param) {
+            Ok(texture)
+        } else {
+            // Forward to default texture
+            let param = model
+                .texture_params
+                .get(texture_param)
+                .ok_or_else(|| anyhow!("undefined texture parameter '{}'", texture_param))?;
+            if let Some(default) = &param.default {
+                Self::determine_texture(model, default)
+                    .with_context(|| format!("-- forwarded to default parameter '{}'", default))
+            } else {
+                Err(anyhow!(
+                    "no default texture for parameter '{}'",
                     texture_param
-                )
-            })
-            .map(String::as_str)
+                ))
+            }
+        }
     }
 
     fn make_inherited<'b>(
@@ -105,9 +113,7 @@ impl Compiler {
             let mut model = model.clone();
 
             // Merge texture parameters
-            model
-                .texture_parameters
-                .extend(parent.texture_parameters.clone());
+            model.texture_params.extend(parent.texture_params.clone());
 
             // Merge prisms
             model.prisms.extend(parent.prisms.iter().cloned());
@@ -136,7 +142,10 @@ pub fn compile<'a>(
         let compiled = compiler
             .compile(model, &get_model, &get_texture_index)
             .with_context(|| format!("failed to compile model '{}'", model))?;
-        result.insert(model.to_owned(), compiled);
+        if let Some(compiled) = compiled {
+            log::info!("Compiled block model '{}'", model);
+            result.insert(model.to_owned(), compiled);
+        }
     }
 
     Ok(result)
