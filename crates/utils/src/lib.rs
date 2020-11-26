@@ -1,6 +1,6 @@
 //! Assorted utility data structures. Not necessarily specific to Voltz.
 
-#![feature(allocator_api)]
+#![feature(allocator_api, slice_fill)]
 
 mod bitset;
 mod packed_array;

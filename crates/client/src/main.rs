@@ -1,4 +1,4 @@
-#![feature(type_name_of_val)]
+#![feature(type_name_of_val, allocator_api)]
 #![allow(dead_code)]
 
 use anyhow::{anyhow, Context};

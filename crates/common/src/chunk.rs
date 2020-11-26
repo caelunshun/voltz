@@ -70,6 +70,20 @@ impl Chunk {
         self.indexes.set(Self::ordinal(x, y, z), index as u64);
     }
 
+    /// Gets the palette of blocks, which is the set of all distinct blocks
+    /// within this chunk.
+    pub fn palette(&self) -> &[BlockId] {
+        &self.palette
+    }
+
+    /// Gets the packed array of indexes into [`palette()`]
+    ///
+    /// Ordering: slices from Y=0 to Y=15, each containg slices
+    /// from Z=0 to Z=15, each of which contains blocks from X=0 to X=15.
+    pub fn indexes(&self) -> &PackedArray {
+        &self.indexes
+    }
+
     fn find_in_palette(&mut self, block: BlockId) -> usize {
         match self.palette.iter().position(|b| *b == block) {
             Some(pos) => pos,

@@ -115,6 +115,16 @@ where
         None
     }
 
+    /// Sets all bits in the bitset.
+    pub fn fill(&mut self) {
+        self.values.fill(u64::MAX);
+    }
+
+    /// Clears all bits in the btset.
+    pub fn clear(&mut self) {
+        self.values.fill(0);
+    }
+
     /// Returns the  capacity of this bitset, which is the
     /// greatest possible value plus one.
     pub fn capacity(&self) -> usize {

@@ -6,6 +6,7 @@ use crate::asset::{model::YamlModel, Asset, Assets};
 
 use self::compile::CompiledModel;
 
+mod algo;
 mod compile;
 
 /// Meshes a chunk, i.e. transforms a volume of blocks into

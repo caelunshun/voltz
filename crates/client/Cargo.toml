@@ -5,7 +5,11 @@ authors = ["caelunshun <caelunshun@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+common = { path = "../common" }
+utils = { path = "../utils" }
+
 wgpu = "0.6"
+glam = "0.10"
 sdl2 = { version = "0.34", features = ["raw-window-handle"] }
 fontdue = "0.4"
 tiny-skia = "0.2"
@@ -15,6 +19,7 @@ guillotiere = "0.6"
 anyhow = "1"
 thiserror = "1"
 ahash = "0.6"
+bumpalo = { path = "../../../bumpalo" }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8"
 walkdir = "2"

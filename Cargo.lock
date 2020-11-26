@@ -117,6 +117,10 @@ dependencies = [
 [[package]]
 name = "bumpalo"
 version = "3.4.0"
+
+[[package]]
+name = "bumpalo"
+version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e8c087f005730276d1096a652e92a8bacee2e2472bcc9715a74d2bec38b5820"
 
@@ -172,8 +176,11 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.6.1",
  "anyhow",
+ "bumpalo 3.4.0",
+ "common",
  "fontdue",
  "futures-executor",
+ "glam",
  "guillotiere",
  "image",
  "log",
@@ -183,6 +190,7 @@ dependencies = [
  "simple_logger",
  "thiserror",
  "tiny-skia",
+ "utils",
  "walkdir",
  "wgpu",
 ]
@@ -682,6 +690,15 @@ dependencies = [
  "gfx-hal",
  "log",
  "slab",
+]
+
+[[package]]
+name = "glam"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "579160312273c954cc51bd440f059dde741029ac8daf8c84fece76cb77f62c15"
+dependencies = [
+ "version_check",
 ]
 
 [[package]]
@@ -1563,7 +1580,7 @@ version = "0.2.68"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f22b422e2a757c35a73774860af8e112bff612ce6cb604224e8e47641a9e4f68"
 dependencies = [
- "bumpalo",
+ "bumpalo 3.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static",
  "log",
  "proc-macro2",
