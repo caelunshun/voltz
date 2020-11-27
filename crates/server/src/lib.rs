@@ -94,13 +94,7 @@ fn generate_world() -> Zone {
                 let mut chunk = Chunk::new();
 
                 if y <= 4 {
-                    for bx in 0..CHUNK_DIM {
-                        for by in 0..CHUNK_DIM {
-                            for bz in 0..CHUNK_DIM {
-                                chunk.set(bx, by, bz, BlockId::new(blocks::Stone));
-                            }
-                        }
-                    }
+                    chunk.fill(BlockId::new(blocks::Stone));
                 }
                 builder.add_chunk(ChunkPos { x, y, z }, chunk).unwrap();
             }

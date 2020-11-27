@@ -82,6 +82,13 @@ impl Chunk {
         self.indexes.set(Self::ordinal(x, y, z), index as u64);
     }
 
+    /// Fills the chunk with the given block, overwriting
+    /// all existing blocks.
+    pub fn fill(&mut self, block: BlockId) {
+        let index = self.find_in_palette(block);
+        self.indexes.fill(index as u64);
+    }
+
     /// Gets the palette of blocks, which is the set of all distinct blocks
     /// within this chunk.
     pub fn palette(&self) -> &[BlockId] {
