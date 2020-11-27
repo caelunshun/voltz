@@ -1,0 +1,4 @@
+inherits: cube
+
+textures:
+  all: stone.png

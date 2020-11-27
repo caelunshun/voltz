@@ -60,7 +60,7 @@ impl Connection {
 
                     self.spawn_player(game, pos, client_info);
                 }
-                packet => {
+                _ => {
                     log::debug!(
                         "Received unexpected packet from client during login state. Disconnecting.",
                     );

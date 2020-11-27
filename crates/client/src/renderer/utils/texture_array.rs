@@ -103,6 +103,7 @@ impl TextureArray {
 
     fn grow(&mut self, encoder: &mut wgpu::CommandEncoder) {
         let old_cap = self.capacity();
+        let old_size = self.desc.size;
         let new_cap = old_cap
             .checked_mul(GROW_FACTOR)
             .expect("texture array overflow");
@@ -120,8 +121,9 @@ impl TextureArray {
                 mip_level: 0,
                 origin: wgpu::Origin3d::ZERO,
             },
-            self.desc.size,
+            old_size,
         );
+        self.texture = new_texture;
 
         self.free.extend(old_cap..new_cap);
     }

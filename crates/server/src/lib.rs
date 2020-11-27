@@ -74,7 +74,7 @@ impl Server {
 }
 
 fn generate_world() -> Zone {
-    const WORLD_SIZE: i32 = 32;
+    const WORLD_SIZE: i32 = 4;
     let mut builder = ZoneBuilder::new(
         ChunkPos {
             x: -WORLD_SIZE,
@@ -83,7 +83,7 @@ fn generate_world() -> Zone {
         },
         ChunkPos {
             x: WORLD_SIZE,
-            y: 16,
+            y: 15,
             z: WORLD_SIZE,
         },
     );
@@ -97,7 +97,7 @@ fn generate_world() -> Zone {
                     for bx in 0..CHUNK_DIM {
                         for by in 0..CHUNK_DIM {
                             for bz in 0..CHUNK_DIM {
-                                chunk.set(bx, bx, by, BlockId::new(blocks::Stone));
+                                chunk.set(bx, by, bz, BlockId::new(blocks::Stone));
                             }
                         }
                     }

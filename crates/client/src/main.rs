@@ -1,20 +1,28 @@
 #![feature(type_name_of_val, allocator_api)]
 #![allow(dead_code)]
 
-use anyhow::{anyhow, Context};
+use std::thread;
+
+use anyhow::{anyhow, bail, Context};
 use asset::{model::YamlModel, texture::PngLoader, Assets, YamlLoader};
+use bumpalo::Bump;
+use common::{entity::player::PlayerBundle, Orient, Pos};
 use game::Game;
+use protocol::{
+    bridge::{self, ToServer},
+    packets::client::ClientInfo,
+    packets::ClientPacket,
+    packets::ServerPacket,
+    Bridge, PROTOCOL_VERSION,
+};
 use renderer::Renderer;
 use sdl2::{event::Event, video::Window, EventPump};
+use server::Server;
 use simple_logger::SimpleLogger;
 
 mod asset;
 mod game;
 mod renderer;
-
-pub enum State {
-    Game(Game),
-}
 
 pub struct Client {
     assets: Assets,
@@ -25,6 +33,8 @@ pub struct Client {
     event_pump: EventPump,
 
     open: bool,
+
+    game: Game,
 }
 
 impl Client {
@@ -54,6 +64,17 @@ fn main() -> anyhow::Result<()> {
         init_sdl2().map_err(|e| anyhow!("failed to initialize SDL2: {}", e))?;
     let renderer = Renderer::new(&window, &assets).context("failed to intiailize wgpu renderer")?;
 
+    let bridge = launch_server()?;
+    let pos = log_in(&bridge).context("failed to connect to integrated server")?;
+    let game = Game::new(
+        bridge,
+        PlayerBundle {
+            pos,
+            orient: Orient::default(),
+        },
+        Bump::new(),
+    );
+
     let client = Client {
         assets,
         renderer,
@@ -62,6 +83,8 @@ fn main() -> anyhow::Result<()> {
         event_pump,
 
         open: true,
+
+        game,
     };
     client.run()
 }
@@ -91,4 +114,49 @@ fn init_sdl2() -> Result<(Window, EventPump), String> {
     let event_pump = sdl2.event_pump()?;
 
     Ok((window, event_pump))
+}
+
+fn launch_server() -> anyhow::Result<Bridge<ToServer>> {
+    let (client_bridge, server_bridge) = bridge::singleplayer();
+
+    let conn = server::Connection::new(server_bridge);
+
+    thread::Builder::new()
+        .name("integrated-server".to_owned())
+        .spawn(move || {
+            let mut server = Server::new(vec![conn]);
+            server.run();
+        })?;
+
+    Ok(client_bridge)
+}
+
+fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<Pos> {
+    log::info!("Connecting to server");
+    bridge.send(ClientPacket::ClientInfo(ClientInfo {
+        protocol_version: PROTOCOL_VERSION,
+        implementation: format!("voltz-client:{}", env!("CARGO_PKG_VERSION")),
+        username: "caelunshun".to_owned(),
+    }));
+
+    let server_info = match bridge.wait_received() {
+        Some(ServerPacket::ServerInfo(info)) => info,
+        Some(_) => bail!("invalid packet received during login state"),
+        None => bail!("disconnected"),
+    };
+
+    log::info!(
+        "Connected to server '{}' implementing protocol {}.",
+        server_info.implementation,
+        server_info.protocol_version
+    );
+
+    let join_game = match bridge.wait_received() {
+        Some(ServerPacket::JoinGame(join_game)) => join_game,
+        Some(_) => bail!("invalid packet received during login state"),
+        None => bail!("disconnected"),
+    };
+
+    log::info!("Received JoinGame: {:?}", join_game);
+    Ok(Pos(join_game.pos))
 }

@@ -1,12 +1,12 @@
-use std::iter;
+use std::{fmt::Debug, iter};
 
 use flume::{Receiver, Sender};
 
 use crate::packets::{client::ClientPacket, server::ServerPacket};
 
 pub trait Side {
-    type SendPacket;
-    type RecvPacket;
+    type SendPacket: Send + Debug + 'static;
+    type RecvPacket: Send + Debug + 'static;
 }
 
 #[derive(Clone)]
@@ -77,8 +77,14 @@ where
         iter::from_fn(move || receiver.try_recv().ok())
     }
 
+    /// Waits for the next packet to be received.
+    pub fn wait_received(&self) -> Option<S::RecvPacket> {
+        self.receiver.recv().ok()
+    }
+
     /// Sends a packet to the peer.
     pub fn send(&self, packet: S::SendPacket) {
+        log::trace!("Sending {:?}", packet);
         let _ = self.sender.send(packet);
     }
 

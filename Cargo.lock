@@ -214,6 +214,7 @@ dependencies = [
  "sdl2",
  "serde",
  "serde_yaml",
+ "server",
  "simple_logger",
  "thiserror",
  "tiny-skia",
@@ -1207,6 +1208,7 @@ dependencies = [
  "common",
  "flume",
  "glam",
+ "log",
  "serde",
 ]
 

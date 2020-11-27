@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 common = { path = "../common" }
+server = { path = "../server" }
 protocol = { path = "../protocol" }
 utils = { path = "../utils" }
 hecs = { version = "0.3", features = ["macros"] }
