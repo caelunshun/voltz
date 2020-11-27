@@ -129,6 +129,53 @@ impl Zone {
     }
 }
 
+/// A "sparse" zone: a zone which contains a dynamic, potentially non-contiguous
+/// set of chunks. Unlike `Zone`, the size of this zone is not fixed.
+///
+/// This structure is used by the client to represent the world as it knows
+/// about a subset of the world. On the server side, we use [`Zone`] as
+/// we know the whole world and it is slightly more efficient.
+#[derive(Default)]
+pub struct SparseZone {
+    chunks: AHashMap<ChunkPos, Chunk>,
+}
+
+impl SparseZone {
+    /// Creates a new zone containing no chunks.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Gets the chunk at `pos`.
+    pub fn chunk(&self, pos: ChunkPos) -> Option<&Chunk> {
+        self.chunks.get(&pos)
+    }
+
+    /// Mutably gets the chunk at `pos`.
+    pub fn chunk_mut(&mut self, pos: ChunkPos) -> Option<&mut Chunk> {
+        self.chunks.get_mut(&pos)
+    }
+
+    /// Gets the block at `pos`, or `None` if the block's
+    /// chunk is not known.
+    pub fn block(&self, pos: BlockPos) -> Option<BlockId> {
+        let chunk = self.chunk(pos.chunk())?;
+        let (x, y, z) = pos.chunk_local();
+        Some(chunk.get(x, y, z))
+    }
+
+    /// Sets the block at `pos`. Returns an error if the
+    /// block's chunk is not loaded.
+    pub fn set_block(&mut self, pos: BlockPos, block: BlockId) -> Result<(), BlockOutOfBounds> {
+        let chunk = self
+            .chunk_mut(pos.chunk())
+            .ok_or_else(|| BlockOutOfBounds(pos))?;
+        let (x, y, z) = pos.chunk_local();
+        chunk.set(x, y, z, block);
+        Ok(())
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 #[error("chunk {0:?} outside of zone bounds (min: {1:?}; max: {2:?})")]
 pub struct ChunkOutOfBounds(ChunkPos, ChunkPos, ChunkPos);
@@ -257,20 +304,21 @@ impl ZoneBuilder {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ZoneId(Uuid);
 
-/// A world, containing one or more `Zone`s`.
+/// A world, containing one or more `Zone`s` of the given
+/// type. `Z` should be either [`Zone`] or [`SparseZone`].
 ///
 /// # Main zone
 /// The main zone is the zone containing "the ground,"
 /// or most of the world. Other zones correspond
 /// to e.g. ships.
-pub struct World {
-    zones: AHashMap<ZoneId, Zone>,
+pub struct World<Z> {
+    zones: AHashMap<ZoneId, Z>,
     main_zone: ZoneId,
 }
 
-impl World {
+impl<Z> World<Z> {
     /// Creates a `World` with the given main zone.
-    pub fn new(main_zone: Zone) -> Self {
+    pub fn new(main_zone: Z) -> Self {
         let mut zones = AHashMap::new();
         let main_zone_id = Self::create_zone_id();
         zones.insert(main_zone_id, main_zone);
@@ -282,28 +330,28 @@ impl World {
     }
 
     /// Gets the `Zone` with the given ID.
-    pub fn zone(&self, id: ZoneId) -> Option<&Zone> {
+    pub fn zone(&self, id: ZoneId) -> Option<&Z> {
         self.zones.get(&id)
     }
 
     /// Mutably gets the `Zone` with the given ID.
-    pub fn zone_mut(&mut self, id: ZoneId) -> Option<&mut Zone> {
+    pub fn zone_mut(&mut self, id: ZoneId) -> Option<&mut Z> {
         self.zones.get_mut(&id)
     }
 
     /// Gets the main zone.
-    pub fn main_zone(&self) -> &Zone {
+    pub fn main_zone(&self) -> &Z {
         self.zone(self.main_zone).expect("missing main zone")
     }
 
     /// Gets the main zone.
-    pub fn main_zone_mut(&mut self) -> &mut Zone {
+    pub fn main_zone_mut(&mut self) -> &mut Z {
         self.zone_mut(self.main_zone).expect("missing main zone")
     }
 
     /// Inserts a new zone into this world.
     /// Returns the ID of this zone.
-    pub fn add_zone(&mut self, zone: Zone) -> ZoneId {
+    pub fn add_zone(&mut self, zone: Z) -> ZoneId {
         let id = Self::create_zone_id();
         self.zones.insert(id, zone);
         id
@@ -311,7 +359,7 @@ impl World {
 
     /// Removes a zone from this world.
     /// Returns the removed zone.
-    pub fn remove_zone(&mut self, id: ZoneId) -> Option<Zone> {
+    pub fn remove_zone(&mut self, id: ZoneId) -> Option<Z> {
         self.zones.remove(&id)
     }
 
