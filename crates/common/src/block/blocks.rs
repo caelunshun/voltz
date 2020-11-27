@@ -13,3 +13,6 @@ pub struct Stone;
 
 #[derive(Block)]
 pub struct Grass;
+
+#[derive(Block)]
+pub struct Melium;

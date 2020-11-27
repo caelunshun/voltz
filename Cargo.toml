@@ -8,5 +8,3 @@ members = [
     "crates/server",
     "crates/client",
 ]
-
-exclude = ["crates/ecs"]

@@ -14,6 +14,12 @@ checksum = "e8fd72866655d1904d6b0997d0b07ba561047d070fbe29de039031c641b61217"
 
 [[package]]
 name = "ahash"
+version = "0.4.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6789e291be47ace86a60303502173d84af8327e3627ecf334356ee0f87a164c"
+
+[[package]]
+name = "ahash"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "865f8b0b3fced577b7df82e9b0eb7609595d7209c0b39e78d0646672e244b1b1"
@@ -198,8 +204,12 @@ dependencies = [
  "futures-executor",
  "glam",
  "guillotiere",
+ "hecs",
  "image",
  "log",
+ "protocol",
+ "rand",
+ "rand_pcg",
  "rayon",
  "sdl2",
  "serde",
@@ -259,7 +269,10 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.6.1",
  "block-macros",
+ "glam",
+ "hecs",
  "once_cell",
+ "serde",
  "thiserror",
  "utils",
  "uuid",
@@ -428,7 +441,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3203e88e086474e56b0785255804a0c23542f76253584d3f43152cd2bb95d0b7"
 dependencies = [
- "hashbrown",
+ "hashbrown 0.8.2",
  "ttf-parser",
 ]
 
@@ -721,11 +734,12 @@ dependencies = [
 
 [[package]]
 name = "glam"
-version = "0.10.2"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "579160312273c954cc51bd440f059dde741029ac8daf8c84fece76cb77f62c15"
+checksum = "e5a647a31acdc1d622b47ad052dd3cdf435046e09183a00aef0368943a70eee3"
 dependencies = [
  "bytemuck",
+ "serde",
  "version_check",
 ]
 
@@ -747,6 +761,37 @@ checksum = "e91b62f79061a0bc2e046024cb7ba44b08419ed238ecbd9adbd787434b9e8c25"
 dependencies = [
  "ahash 0.3.8",
  "autocfg",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
+dependencies = [
+ "ahash 0.4.6",
+]
+
+[[package]]
+name = "hecs"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2fc21f4816c4332a954ac0b7a227f1a06a0addd8f240c2727591449f56de5931"
+dependencies = [
+ "hashbrown 0.9.1",
+ "hecs-macros",
+ "lazy_static",
+]
+
+[[package]]
+name = "hecs-macros"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ec3017cd52f301b7201101d9ed5344788859c6fd3be0ae485f9784c47149f6a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -811,6 +856,9 @@ name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
+dependencies = [
+ "spin",
+]
 
 [[package]]
 name = "libc"
@@ -1158,6 +1206,7 @@ dependencies = [
  "bincode",
  "common",
  "flume",
+ "glam",
  "serde",
 ]
 
@@ -1351,6 +1400,14 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bumpalo 3.4.0",
+ "common",
+ "glam",
+ "hecs",
+ "log",
+ "protocol",
+ "rand",
+ "rand_pcg",
 ]
 
 [[package]]
@@ -1395,6 +1452,12 @@ name = "smallvec"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7acad6f34eb9e8a259d3283d1e8c1d34d7415943d4895f65cc73813c7396fc85"
+
+[[package]]
+name = "spin"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spinning_top"
@@ -1547,6 +1610,7 @@ dependencies = [
  "bumpalo 3.4.0",
  "rand",
  "rand_pcg",
+ "serde",
 ]
 
 [[package]]

@@ -3,12 +3,18 @@
 
 use anyhow::{anyhow, Context};
 use asset::{model::YamlModel, texture::PngLoader, Assets, YamlLoader};
+use game::Game;
 use renderer::Renderer;
 use sdl2::{event::Event, video::Window, EventPump};
 use simple_logger::SimpleLogger;
 
 mod asset;
+mod game;
 mod renderer;
+
+pub enum State {
+    Game(Game),
+}
 
 pub struct Client {
     assets: Assets,

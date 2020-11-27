@@ -1,5 +1,6 @@
 //! Data structure for compactly storing blocks in the world.
 
+use serde::{Deserialize, Serialize};
 use utils::PackedArray;
 
 use crate::{blocks, BlockId};
@@ -11,11 +12,20 @@ pub const CHUNK_VOLUME: usize = CHUNK_DIM * CHUNK_DIM * CHUNK_DIM;
 
 /// Position of a chunk relative to the zone origin.
 /// Measured in units of CHUNK_DIM = 16 blocks.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(
+    Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
 pub struct ChunkPos {
     pub x: i32,
     pub y: i32,
     pub z: i32,
+}
+
+impl ChunkPos {
+    /// Returns the Manhattan distance from `self` to `other`.
+    pub fn manhattan_distance(self, other: ChunkPos) -> i32 {
+        (other.x - self.x) + (other.y - self.y) + (other.z - self.z)
+    }
 }
 
 /// The starting number of bits per block to use in a chunk.
@@ -27,6 +37,8 @@ const INITIAL_BITS_PER_BLOCK: usize = 3;
 /// Each entry in the packed array is an index into the palette, which
 /// is a `Vec<BlockId>`. For chunks with small numbers of blocks, we can
 /// use as few as 3-4 bits per block.
+// TODO: uphold invariants when deserializing.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chunk {
     /// Stores indexes into `palette` of blocks for each position.
     indexes: PackedArray,

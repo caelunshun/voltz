@@ -129,53 +129,6 @@ impl Zone {
     }
 }
 
-/// A "sparse" zone: a zone which contains a dynamic, potentially non-contiguous
-/// set of chunks. Unlike `Zone`, the size of this zone is not fixed.
-///
-/// This structure is used by the client to represent the world as it knows
-/// about a subset of the world. On the server side, we use [`Zone`] as
-/// we know the whole world and it is slightly more efficient.
-#[derive(Default)]
-pub struct SparseZone {
-    chunks: AHashMap<ChunkPos, Chunk>,
-}
-
-impl SparseZone {
-    /// Creates a new zone containing no chunks.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Gets the chunk at `pos`.
-    pub fn chunk(&self, pos: ChunkPos) -> Option<&Chunk> {
-        self.chunks.get(&pos)
-    }
-
-    /// Mutably gets the chunk at `pos`.
-    pub fn chunk_mut(&mut self, pos: ChunkPos) -> Option<&mut Chunk> {
-        self.chunks.get_mut(&pos)
-    }
-
-    /// Gets the block at `pos`, or `None` if the block's
-    /// chunk is not known.
-    pub fn block(&self, pos: BlockPos) -> Option<BlockId> {
-        let chunk = self.chunk(pos.chunk())?;
-        let (x, y, z) = pos.chunk_local();
-        Some(chunk.get(x, y, z))
-    }
-
-    /// Sets the block at `pos`. Returns an error if the
-    /// block's chunk is not loaded.
-    pub fn set_block(&mut self, pos: BlockPos, block: BlockId) -> Result<(), BlockOutOfBounds> {
-        let chunk = self
-            .chunk_mut(pos.chunk())
-            .ok_or_else(|| BlockOutOfBounds(pos))?;
-        let (x, y, z) = pos.chunk_local();
-        chunk.set(x, y, z, block);
-        Ok(())
-    }
-}
-
 #[derive(Debug, thiserror::Error)]
 #[error("chunk {0:?} outside of zone bounds (min: {1:?}; max: {2:?})")]
 pub struct ChunkOutOfBounds(ChunkPos, ChunkPos, ChunkPos);
@@ -297,6 +250,64 @@ impl ZoneBuilder {
             max: self.max,
             chunks,
         })
+    }
+}
+
+/// A "sparse" zone: a zone which contains a dynamic, potentially non-contiguous
+/// set of chunks. Unlike `Zone`, the size of this zone is not fixed.
+///
+/// This structure is used by the client to represent the world as it knows
+/// about a subset of the world. On the server side, we use [`Zone`] as
+/// we know the whole world and it is slightly more efficient.
+#[derive(Default)]
+pub struct SparseZone {
+    chunks: AHashMap<ChunkPos, Chunk>,
+}
+
+impl SparseZone {
+    /// Creates a new zone containing no chunks.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Gets the chunk at `pos`.
+    pub fn chunk(&self, pos: ChunkPos) -> Option<&Chunk> {
+        self.chunks.get(&pos)
+    }
+
+    /// Mutably gets the chunk at `pos`.
+    pub fn chunk_mut(&mut self, pos: ChunkPos) -> Option<&mut Chunk> {
+        self.chunks.get_mut(&pos)
+    }
+
+    /// Inserts a new chunk. If a chunk at `pos` already exists,
+    /// it is replaced.
+    pub fn insert(&mut self, pos: ChunkPos, chunk: Chunk) {
+        self.chunks.insert(pos, chunk);
+    }
+
+    /// Removes the chunk at `pos`, returning it.
+    pub fn remove(&mut self, pos: ChunkPos) -> Option<Chunk> {
+        self.chunks.remove(&pos)
+    }
+
+    /// Gets the block at `pos`, or `None` if the block's
+    /// chunk is not known.
+    pub fn block(&self, pos: BlockPos) -> Option<BlockId> {
+        let chunk = self.chunk(pos.chunk())?;
+        let (x, y, z) = pos.chunk_local();
+        Some(chunk.get(x, y, z))
+    }
+
+    /// Sets the block at `pos`. Returns an error if the
+    /// block's chunk is not loaded.
+    pub fn set_block(&mut self, pos: BlockPos, block: BlockId) -> Result<(), BlockOutOfBounds> {
+        let chunk = self
+            .chunk_mut(pos.chunk())
+            .ok_or_else(|| BlockOutOfBounds(pos))?;
+        let (x, y, z) = pos.chunk_local();
+        chunk.set(x, y, z, block);
+        Ok(())
     }
 }
 

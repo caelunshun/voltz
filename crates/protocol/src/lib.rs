@@ -32,6 +32,10 @@
 //! * Either peer disconnects and sends [`Disconnect`](packets::shared::Disconnect)
 //! before doing so.
 
+/// Current protocol version. Increment when a new release is made
+/// with a change in the protocol.
+pub const PROTOCOL_VERSION: u32 = 0;
+
 pub mod bridge;
 pub mod packets;
 

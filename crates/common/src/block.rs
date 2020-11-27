@@ -4,6 +4,7 @@ use std::any::{Any, TypeId};
 
 use ahash::AHashMap;
 use once_cell::sync::Lazy;
+use serde::{Deserialize, Serialize};
 
 pub mod blocks;
 
@@ -60,7 +61,8 @@ static REGISTRY: Lazy<Registry> = Lazy::new(|| {
         .register::<Air>()
         .register::<Dirt>()
         .register::<Stone>()
-        .register::<Grass>();
+        .register::<Grass>()
+        .register::<Melium>();
 
     registry
 });
@@ -82,7 +84,7 @@ static REGISTRY: Lazy<Registry> = Lazy::new(|| {
 /// which identifies which type this block is ("dirt", "chest"),
 /// and the state ID, which determines the set of property
 /// values for this block state (e.g. "facing: Facing::North").
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[repr(C)]
 pub struct BlockId {
     kind: u32,

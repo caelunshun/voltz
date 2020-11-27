@@ -1,6 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 /// A packed array of integers, where each integer consumes
 /// `n` bits (where `n` is determined at runtime and not necessarily
 /// a power of 2).
+// TODO: uphold invariants when deserializing.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PackedArray {
     length: usize,
     bits_per_value: usize,

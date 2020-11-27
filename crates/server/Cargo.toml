@@ -4,5 +4,24 @@ version = "0.1.0"
 authors = ["caelunshun <caelunshun@gmail.com>"]
 edition = "2018"
 
+[lib]
+name = "server"
+path = "src/lib.rs"
+
+[[bin]]
+name = "voltz-server"
+path = "src/main.rs"
+
 [dependencies]
+common = { path = "../common" }
+protocol = { path = "../protocol" }
+hecs = "0.3"
+
 anyhow = "1"
+bumpalo = { path = "../../../bumpalo" }
+glam = "0.11"
+
+rand = "0.7"
+rand_pcg = "0.2"
+
+log = "0.4"

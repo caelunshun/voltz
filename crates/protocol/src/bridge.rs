@@ -1,3 +1,5 @@
+use std::iter;
+
 use flume::{Receiver, Sender};
 
 use crate::packets::{client::ClientPacket, server::ServerPacket};
@@ -7,7 +9,7 @@ pub trait Side {
     type RecvPacket;
 }
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct ToServer;
 
 impl Side for ToServer {
@@ -30,10 +32,22 @@ impl Side for ToClient {
 /// the client and server run in the same process and different threads, so they
 /// communicate via a channel. Whereas in multiplayer, client and server communicate
 /// over the network via QUIC.
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Bridge<S: Side> {
     sender: Sender<S::SendPacket>,
     receiver: Receiver<S::RecvPacket>,
+}
+
+impl<S> Clone for Bridge<S>
+where
+    S: Side,
+{
+    fn clone(&self) -> Self {
+        Self {
+            sender: self.sender.clone(),
+            receiver: self.receiver.clone(),
+        }
+    }
 }
 
 /// Creates a new singleplayer `Bridge` pair.
@@ -58,8 +72,9 @@ where
     S: Side,
 {
     /// Returns an iterator over buffered packets.
-    pub fn flush_received<'a>(&'a self) -> impl Iterator<Item = S::RecvPacket> + 'a {
-        self.receiver.try_iter()
+    pub fn flush_received(&self) -> impl Iterator<Item = S::RecvPacket> {
+        let receiver = self.receiver.clone();
+        iter::from_fn(move || receiver.try_recv().ok())
     }
 
     /// Sends a packet to the peer.
