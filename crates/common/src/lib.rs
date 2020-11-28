@@ -5,6 +5,7 @@ pub mod biome;
 pub mod block;
 pub mod chunk;
 pub mod entity;
+pub mod event;
 pub mod system;
 pub mod world;
 

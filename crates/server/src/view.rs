@@ -44,6 +44,7 @@ fn update_views<'g>(
     for (player, (&pos, view)) in game.ecs().query::<(&Pos, &mut View)>().iter() {
         let chunk = ChunkPos::from_pos(pos);
         if chunk != view.center() {
+            // View should be updated.
             let old_view = *view;
             *view = View::new(chunk, view.distance());
             updated.push((player, old_view, *view));
