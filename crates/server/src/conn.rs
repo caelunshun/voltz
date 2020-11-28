@@ -14,7 +14,7 @@ use protocol::{
     Bridge, PROTOCOL_VERSION,
 };
 
-use crate::{game::Game, VIEW_DISTANCE};
+use crate::{event::PlayerJoined, game::Game, VIEW_DISTANCE};
 
 /// A connection to a client.
 pub struct Connection {
@@ -85,6 +85,7 @@ impl Connection {
             self.bridge.clone(),
             View::new(ChunkPos::from_pos(pos), VIEW_DISTANCE),
         ));
+        game.events().push(PlayerJoined { player });
 
         self.state = ConnectionState::Game { player };
     }

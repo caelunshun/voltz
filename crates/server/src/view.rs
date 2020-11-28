@@ -10,7 +10,7 @@ use protocol::packets::{
     ServerPacket,
 };
 
-use crate::{game::Game, Mailbox};
+use crate::{event::PlayerJoined, game::Game, Mailbox};
 
 pub fn setup(systems: &mut SystemExecutor<Game>) {
     systems.add(ViewSystem::default());
@@ -21,25 +21,23 @@ pub fn setup(systems: &mut SystemExecutor<Game>) {
 /// 2) send new chunks when the view changes
 /// 3) unload all chunks when the view changes
 #[derive(Default)]
-struct ViewSystem {
-    known_players: HashSet<Entity>,
-}
+struct ViewSystem;
 
 impl System<Game> for ViewSystem {
     fn run(&mut self, game: &mut Game) {
-        let players = update_views(game, &mut self.known_players);
+        let players = update_views(game);
+        for (player, _, _) in &players {
+            let username = game.ecs().get::<Username>(*player).unwrap();
+            log::debug!("Updating view for {}", username.0);
+        }
         update_chunks(&players, game);
     }
 }
 
 type UpdatedView = (Entity, View, View);
 
-fn update_views<'g>(
-    game: &'g Game,
-    known_players: &mut HashSet<Entity>,
-) -> Vec<UpdatedView, &'g Bump> {
+fn update_views<'g>(game: &'g Game) -> Vec<UpdatedView, &'g Bump> {
     let mut updated = Vec::new_in(game.bump());
-    let mut players_this_tick = HashSet::new_in(game.bump());
 
     for (player, (&pos, view)) in game.ecs().query::<(&Pos, &mut View)>().iter() {
         let chunk = ChunkPos::from_pos(pos);
@@ -48,18 +46,15 @@ fn update_views<'g>(
             let old_view = *view;
             *view = View::new(chunk, view.distance());
             updated.push((player, old_view, *view));
-        } else if !known_players.contains(&player) {
-            // Player just joined, so we'll update their view.
-            let old_view = View::empty();
-            let new_view = *view;
-            updated.push((player, old_view, new_view));
         }
-
-        players_this_tick.insert(player);
     }
 
-    known_players.clear();
-    known_players.extend(players_this_tick);
+    // Process newly joined players, whose views also need updating.
+    for event in game.events().iter::<PlayerJoined>() {
+        let player = event.player;
+        let view = game.ecs().get::<View>(player).unwrap();
+        updated.push((player, View::empty(), *view));
+    }
 
     updated
 }

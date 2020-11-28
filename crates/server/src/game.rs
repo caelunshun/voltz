@@ -1,7 +1,7 @@
 use std::cell::{RefCell, RefMut};
 
 use bumpalo::Bump;
-use common::{World, Zone};
+use common::{event::EventBus, World, Zone};
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 
@@ -17,6 +17,9 @@ pub struct Game {
     /// The world containing all zones.
     world: World<Zone>,
 
+    /// The event bus.
+    events: RefCell<EventBus>,
+
     /// The bump allocator.
     bump: Bump,
 
@@ -29,12 +32,14 @@ impl Game {
     pub fn new(main_zone: Zone) -> Self {
         let ecs = hecs::World::new();
         let world = World::new(main_zone);
+        let events = RefCell::new(EventBus::new());
         let bump = Bump::new();
         let rng = RefCell::new(Pcg64Mcg::from_entropy());
 
         Self {
             ecs,
             world,
+            events,
             bump,
             rng,
         }
@@ -70,6 +75,11 @@ impl Game {
         self.world_mut().main_zone_mut()
     }
 
+    /// Gets the event bus, used to process or enqueue events.
+    pub fn events(&self) -> RefMut<EventBus> {
+        self.events.borrow_mut()
+    }
+
     /// Gets the _non-cryptocraphic_ RNG for game logic.
     pub fn rng(&self) -> RefMut<impl Rng> {
         self.rng.borrow_mut()
@@ -78,5 +88,9 @@ impl Game {
     /// Gets a bump allocator for efficient short-lived allocations.
     pub fn bump(&self) -> &Bump {
         &self.bump
+    }
+
+    pub fn bump_mut(&mut self) -> &mut Bump {
+        &mut self.bump
     }
 }

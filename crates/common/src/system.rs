@@ -38,9 +38,10 @@ where
     }
 
     /// Runs all systems in order.
-    pub fn run(&mut self, game: &mut S) {
+    pub fn run(&mut self, game: &mut S, mut in_between: impl FnMut(&mut S)) {
         for system in &mut self.systems {
             system.run(game);
+            in_between(game);
         }
     }
 }
