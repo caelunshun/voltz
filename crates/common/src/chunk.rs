@@ -3,7 +3,7 @@
 use serde::{Deserialize, Serialize};
 use utils::PackedArray;
 
-use crate::{blocks, BlockId};
+use crate::{blocks, BlockId, Pos};
 
 /// The dimensions of a chunk (cube).
 pub const CHUNK_DIM: usize = 16;
@@ -25,6 +25,17 @@ impl ChunkPos {
     /// Returns the Manhattan distance from `self` to `other`.
     pub fn manhattan_distance(self, other: ChunkPos) -> i32 {
         (other.x - self.x) + (other.y - self.y) + (other.z - self.z)
+    }
+
+    /// Gets the position of the chunk containing the given `Pos`.
+    pub fn from_pos(pos: Pos) -> Self {
+        let pos = pos.0;
+
+        let x = (pos.x.floor() as i32).div_euclid(CHUNK_DIM as i32);
+        let y = (pos.y.floor() as i32).div_euclid(CHUNK_DIM as i32);
+        let z = (pos.z.floor() as i32).div_euclid(CHUNK_DIM as i32);
+
+        Self { x, y, z }
     }
 }
 

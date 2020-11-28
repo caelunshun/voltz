@@ -20,6 +20,8 @@ hecs = "0.3"
 anyhow = "1"
 bumpalo = { path = "../../../bumpalo" }
 glam = "0.11"
+hashbrown = { git = "https://github.com/rust-lang/hashbrown", features = ["nightly"] }
+rayon = "1"
 
 rand = "0.7"
 rand_pcg = "0.2"

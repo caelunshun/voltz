@@ -269,9 +269,11 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "ahash 0.6.1",
+ "anyhow",
  "block-macros",
  "glam",
  "hecs",
+ "log",
  "once_cell",
  "serde",
  "thiserror",
@@ -404,6 +406,17 @@ checksum = "73770f8e1fe7d64df17ca66ad28994a0a623ea497fa69486e14984e715c5d174"
 dependencies = [
  "adler32",
  "byteorder",
+]
+
+[[package]]
+name = "derivative"
+version = "2.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb582b60359da160a9477ee80f15c8d784c477e69c217ef2cdd4169c24ea380f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -774,12 +787,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "hashbrown"
+version = "0.9.1"
+source = "git+https://github.com/rust-lang/hashbrown#b2266389e4a23511a1130f7a301a884edf55645b"
+dependencies = [
+ "ahash 0.4.6",
+]
+
+[[package]]
 name = "hecs"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fc21f4816c4332a954ac0b7a227f1a06a0addd8f240c2727591449f56de5931"
 dependencies = [
- "hashbrown 0.9.1",
+ "hashbrown 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hecs-macros",
  "lazy_static",
 ]
@@ -1206,6 +1227,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "common",
+ "derivative",
  "flume",
  "glam",
  "log",
@@ -1405,11 +1427,13 @@ dependencies = [
  "bumpalo 3.4.0",
  "common",
  "glam",
+ "hashbrown 0.9.1 (git+https://github.com/rust-lang/hashbrown)",
  "hecs",
  "log",
  "protocol",
  "rand",
  "rand_pcg",
+ "rayon",
 ]
 
 [[package]]

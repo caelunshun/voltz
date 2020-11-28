@@ -1,4 +1,7 @@
-use common::entity::player::Username;
+use common::{
+    entity::player::{Username, View},
+    ChunkPos, Pos,
+};
 use glam::Vec3A;
 use hecs::Entity;
 use protocol::{
@@ -11,7 +14,7 @@ use protocol::{
     Bridge, PROTOCOL_VERSION,
 };
 
-use crate::{game::Game, mailbox::Mailbox};
+use crate::{game::Game, VIEW_DISTANCE};
 
 /// A connection to a client.
 pub struct Connection {
@@ -74,11 +77,13 @@ impl Connection {
 
     fn spawn_player(&mut self, game: &mut Game, pos: Vec3A, client_info: ClientInfo) {
         log::info!("{} joined the game.", client_info.username);
+        let pos = Pos(pos);
 
         let player = game.ecs_mut().spawn((
             pos,
             Username(client_info.username),
-            Mailbox::from_bridge(self.bridge.clone()),
+            self.bridge.clone(),
+            View::new(ChunkPos::from_pos(pos), VIEW_DISTANCE),
         ));
 
         self.state = ConnectionState::Game { player };

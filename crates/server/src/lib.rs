@@ -1,26 +1,36 @@
+#![feature(allocator_api)]
+
 use std::{
     panic, thread,
     time::{Duration, Instant},
 };
 
-use common::{blocks, chunk::CHUNK_DIM, world::ZoneBuilder, BlockId, Chunk, ChunkPos, Zone};
+use common::{blocks, world::ZoneBuilder, BlockId, Chunk, ChunkPos, SystemExecutor, Zone};
 pub use conn::Connection;
 use game::Game;
 use panic::AssertUnwindSafe;
+use protocol::{bridge::ToClient, Bridge};
 
 mod conn;
 mod game;
-mod mailbox;
+mod view;
+
+pub type Mailbox = Bridge<ToClient>;
 
 /// The number of ticks executed per second.
 pub const TPS: u32 = 20;
 /// The number of milliseconds in between each tick.
 pub const TICK_LENGTH: u32 = 1000 / TPS;
 
+/// The number of chunks visible from a player's current
+/// position. Fixed for now.
+pub const VIEW_DISTANCE: u32 = 4;
+
 /// The top-level server state.
 pub struct Server {
     clients: Vec<Connection>,
     game: Game,
+    systems: SystemExecutor<Game>,
 }
 
 impl Server {
@@ -34,8 +44,12 @@ impl Server {
         log::info!("World generated in {:?}", start.elapsed());
 
         let game = Game::new(main_zone);
-
-        Self { clients, game }
+        let systems = setup();
+        Self {
+            clients,
+            game,
+            systems,
+        }
     }
 
     /// Runs the server.
@@ -64,6 +78,7 @@ impl Server {
 
     fn tick(&mut self) {
         self.poll_connections();
+        self.systems.run(&mut self.game);
     }
 
     fn poll_connections(&mut self) {
@@ -92,7 +107,6 @@ fn generate_world() -> Zone {
         for y in 0..16 {
             for z in -WORLD_SIZE..=WORLD_SIZE {
                 let mut chunk = Chunk::new();
-
                 if y <= 4 {
                     chunk.fill(BlockId::new(blocks::Stone));
                 }
@@ -102,4 +116,12 @@ fn generate_world() -> Zone {
     }
 
     builder.build().ok().expect("failed to generate all chunks")
+}
+
+fn setup() -> SystemExecutor<Game> {
+    let mut systems = SystemExecutor::new();
+
+    view::setup(&mut systems);
+
+    systems
 }

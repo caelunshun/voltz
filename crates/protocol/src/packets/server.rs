@@ -1,6 +1,7 @@
 //! Packets sent by the server.
 
 use common::{Chunk, ChunkPos};
+use derivative::Derivative;
 use glam::Vec3A;
 use serde::{Deserialize, Serialize};
 
@@ -40,11 +41,13 @@ pub struct JoinGame {
 /// Replaces the chunk if it was already loaded. This behavior
 /// can be utilized to optimize bulk block updates by replacing
 /// entire chunks.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Derivative, Serialize, Deserialize)]
+#[derivative(Debug)]
 pub struct LoadChunk {
     /// The position of the chunk.
     pub pos: ChunkPos,
     /// The chunk.
+    #[derivative(Debug = "ignore")]
     pub chunk: Chunk,
 }
 

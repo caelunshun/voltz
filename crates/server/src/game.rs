@@ -1,8 +1,8 @@
-use std::cell::RefCell;
+use std::cell::{RefCell, RefMut};
 
 use bumpalo::Bump;
 use common::{World, Zone};
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 
 /// Uberstruct containing the entire game state.
@@ -17,7 +17,7 @@ pub struct Game {
     /// The world containing all zones.
     world: World<Zone>,
 
-    /// Bump allocator for efficient temporary allocation.
+    /// The bump allocator.
     bump: Bump,
 
     /// The non-cryptographic RNG used for game operations.
@@ -68,5 +68,15 @@ impl Game {
     /// Convenience function to mutably get the main zone.
     pub fn main_zone_mut(&mut self) -> &mut Zone {
         self.world_mut().main_zone_mut()
+    }
+
+    /// Gets the _non-cryptocraphic_ RNG for game logic.
+    pub fn rng(&self) -> RefMut<impl Rng> {
+        self.rng.borrow_mut()
+    }
+
+    /// Gets a bump allocator for efficient short-lived allocations.
+    pub fn bump(&self) -> &Bump {
+        &self.bump
     }
 }

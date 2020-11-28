@@ -8,3 +8,6 @@ members = [
     "crates/server",
     "crates/client",
 ]
+
+[profile.release]
+debug = true

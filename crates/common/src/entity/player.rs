@@ -31,6 +31,19 @@ impl View {
         }
     }
 
+    /// Creates an empty view containing no chunks.
+    pub fn empty() -> Self {
+        Self::new(ChunkPos::default(), 0)
+    }
+
+    pub fn center(self) -> ChunkPos {
+        self.center
+    }
+
+    pub fn distance(self) -> u32 {
+        self.distance as u32
+    }
+
     /// Iterates over chunks visible to the player.
     pub fn iter(self) -> impl Iterator<Item = ChunkPos> {
         Self::iter_3d(
@@ -51,12 +64,6 @@ impl View {
             && pos.y <= self.max_y()
             && pos.z >= self.min_z()
             && pos.z <= self.max_z()
-    }
-
-    /// Computes the chunks contained in `self` but not `other`.
-    pub fn difference(self, other: View) -> impl Iterator<Item = ChunkPos> {
-        // A more efficient algorithm might be useful.
-        std::iter::empty()
     }
 
     fn iter_3d(
