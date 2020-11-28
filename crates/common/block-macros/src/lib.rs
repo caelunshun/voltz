@@ -1,12 +1,20 @@
 use std::ops::{Deref, RangeInclusive};
 
+use darling::FromDeriveInput;
 use proc_macro2::TokenStream;
-use proc_macro_error::{abort, emit_error, proc_macro_error};
+use proc_macro_error::{abort, abort_call_site, emit_error, proc_macro_error};
 use quote::quote;
 use syn::{
-    spanned::Spanned, Expr, ExprParen, ExprRange, Field, Ident, ItemStruct, Lit, Path, RangeLimits,
-    Type,
+    spanned::Spanned, DeriveInput, Expr, ExprParen, ExprRange, Field, Ident, ItemStruct, Lit, Path,
+    RangeLimits, Type,
 };
+
+#[derive(FromDeriveInput)]
+#[darling(attributes(block))]
+struct Descriptor {
+    slug: String,
+    display_name: String,
+}
 
 /// Used to create a struct representing a block plus
 /// several helper structs.
@@ -28,15 +36,20 @@ use syn::{
 /// For enum or bool properties, this is not necessary.
 ///
 /// Block properties must implement the `BlockProperty` trait.
-#[proc_macro_derive(Block, attributes(range))]
+#[proc_macro_derive(Block, attributes(range, block))]
 #[proc_macro_error]
 pub fn block(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    let input1 = input.clone();
+    let derive_input = syn::parse_macro_input!(input1 as DeriveInput);
+    let descriptor = Descriptor::from_derive_input(&derive_input)
+        .unwrap_or_else(|_| abort_call_site!("failed to parse block descriptor tag"));
+
     let input = syn::parse_macro_input!(input as ItemStruct);
     let fields = validate(&input);
 
     let properties = determine_properties(&fields);
 
-    let block_impl = generate_block_impl(&input, &properties);
+    let block_impl = generate_block_impl(&input, &descriptor, &properties);
 
     let result = quote! {
         #block_impl
@@ -155,7 +168,11 @@ fn parse_range_lit(expr: &Option<Box<Expr>>) -> i64 {
     }
 }
 
-fn generate_block_impl(item: &ItemStruct, properties: &Properties) -> TokenStream {
+fn generate_block_impl(
+    item: &ItemStruct,
+    descriptor: &Descriptor,
+    properties: &Properties,
+) -> TokenStream {
     let ident = &item.ident;
     let packer = quote::format_ident!("ImplBlockFor_{}_PropertyPacker", ident);
 
@@ -164,6 +181,8 @@ fn generate_block_impl(item: &ItemStruct, properties: &Properties) -> TokenStrea
     let num_possible_values = generate_num_possible_values(properties);
     let map_prop_to_int: Vec<TokenStream> = generate_map_prop_to_int(properties);
     let map_int_to_prop: Vec<TokenStream> = generate_map_int_to_prop(properties);
+
+    let Descriptor { slug, display_name } = descriptor;
 
     quote! {
         #[allow(non_upper_case_globals)]
@@ -187,7 +206,7 @@ fn generate_block_impl(item: &ItemStruct, properties: &Properties) -> TokenStrea
             }
 
             fn descriptor() -> crate::block::BlockDescriptor {
-                crate::block::BlockDescriptor::new("unknown", "Unknown Block")
+                crate::block::BlockDescriptor::new(#slug, #display_name)
             }
         }
     }
