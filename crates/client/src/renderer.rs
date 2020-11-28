@@ -4,7 +4,7 @@ use anyhow::{anyhow, Context};
 use futures_executor::block_on;
 use sdl2::video::Window;
 
-use crate::asset::Assets;
+use crate::{asset::Assets, game::Game};
 
 use self::chunk::ChunkRenderer;
 
@@ -74,6 +74,8 @@ impl Renderer {
         ))
         .context("failed to create device")?;
 
+        log::info!("Device limits: {:#?}", device.limits());
+
         let resources = Arc::new(Resources {
             adapter,
             device,
@@ -96,4 +98,16 @@ impl Renderer {
             chunk_renderer,
         })
     }
+
+    /// Renders a frame.
+    pub fn render(&mut self, game: &mut Game) {
+        self.prep_render(game);
+        self.do_render(game);
+    }
+
+    fn prep_render(&mut self, game: &mut Game) {
+        self.chunk_renderer.prep_render(game);
+    }
+
+    fn do_render(&mut self, game: &mut Game) {}
 }

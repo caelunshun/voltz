@@ -81,11 +81,8 @@ impl Server {
         self.game.events().set_system(0);
         self.poll_connections();
 
-        let mut current_system = 1; // system 0 is poll_connections
-        self.game.events().set_system(current_system);
-        self.systems.run(&mut self.game, |game| {
-            current_system += 1;
-            game.events().set_system(current_system)
+        self.systems.run(&mut self.game, |game, system| {
+            game.events().set_system(system + 1);
         });
 
         self.game.bump_mut().reset();

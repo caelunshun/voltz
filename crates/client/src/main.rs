@@ -6,7 +6,8 @@ use std::thread;
 use anyhow::{anyhow, bail, Context};
 use asset::{model::YamlModel, texture::PngLoader, Assets, YamlLoader};
 use bumpalo::Bump;
-use common::{entity::player::PlayerBundle, Orient, Pos};
+use common::{entity::player::PlayerBundle, Orient, Pos, SystemExecutor};
+use conn::Connection;
 use game::Game;
 use protocol::{
     bridge::{self, ToServer},
@@ -21,6 +22,8 @@ use server::Server;
 use simple_logger::SimpleLogger;
 
 mod asset;
+mod conn;
+mod event;
 mod game;
 mod renderer;
 
@@ -35,12 +38,16 @@ pub struct Client {
     open: bool,
 
     game: Game,
+    conn: Connection,
+
+    systems: SystemExecutor<Game>,
 }
 
 impl Client {
     pub fn run(mut self) -> anyhow::Result<()> {
         while self.open {
             self.handle_events();
+            self.tick();
         }
         Ok(())
     }
@@ -53,11 +60,23 @@ impl Client {
             }
         }
     }
+
+    fn tick(&mut self) {
+        self.game.events().set_system(0);
+        self.conn.handle_packets(&mut self.game);
+
+        self.systems.run(&mut self.game, |game, system| {
+            game.events().set_system(system + 1)
+        });
+
+        self.game.events().set_system(self.systems.len() + 1);
+        self.renderer.render(&mut self.game);
+    }
 }
 
 fn main() -> anyhow::Result<()> {
     SimpleLogger::new()
-        .with_level(log::LevelFilter::Debug)
+        .with_level(log::LevelFilter::Trace)
         .init()?;
     let assets = load_assets()?;
     let (window, event_pump) =
@@ -66,6 +85,7 @@ fn main() -> anyhow::Result<()> {
 
     let bridge = launch_server()?;
     let pos = log_in(&bridge).context("failed to connect to integrated server")?;
+    let conn = Connection::new(bridge.clone());
     let game = Game::new(
         bridge,
         PlayerBundle {
@@ -74,6 +94,7 @@ fn main() -> anyhow::Result<()> {
         },
         Bump::new(),
     );
+    let systems = setup();
 
     let client = Client {
         assets,
@@ -85,6 +106,9 @@ fn main() -> anyhow::Result<()> {
         open: true,
 
         game,
+        conn,
+
+        systems,
     };
     client.run()
 }
@@ -159,4 +183,10 @@ fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<Pos> {
 
     log::info!("Received JoinGame: {:?}", join_game);
     Ok(Pos(join_game.pos))
+}
+
+fn setup() -> SystemExecutor<Game> {
+    let mut systems = SystemExecutor::new();
+
+    systems
 }

@@ -3,6 +3,7 @@ name = "client"
 version = "0.1.0"
 authors = ["caelunshun <caelunshun@gmail.com>"]
 edition = "2018"
+default-run = "client"
 
 [dependencies]
 common = { path = "../common" }

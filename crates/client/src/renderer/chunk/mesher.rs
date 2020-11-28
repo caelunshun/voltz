@@ -16,6 +16,7 @@ mod algo;
 mod compile;
 
 /// A mesh uploaded to the GPU.
+#[derive(Debug)]
 pub struct GpuMesh {
     pub vertex_buffer: wgpu::Buffer,
 }

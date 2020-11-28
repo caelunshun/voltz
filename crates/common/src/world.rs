@@ -315,7 +315,7 @@ impl SparseZone {
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ZoneId(Uuid);
 
-/// A world, containing one or more `Zone`s` of the given
+/// A world, containing one or more `Zone`s of the given
 /// type. `Z` should be either [`Zone`] or [`SparseZone`].
 ///
 /// # Main zone

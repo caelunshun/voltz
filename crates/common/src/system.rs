@@ -37,11 +37,17 @@ where
         self
     }
 
-    /// Runs all systems in order.
-    pub fn run(&mut self, game: &mut S, mut in_between: impl FnMut(&mut S)) {
-        for system in &mut self.systems {
+    /// Returns the number of systems.
+    pub fn len(&self) -> usize {
+        self.systems.len()
+    }
+
+    /// Runs all systems in order. The closure `before` will be called
+    /// before each system runs, given the index of the system.
+    pub fn run(&mut self, game: &mut S, mut before: impl FnMut(&mut S, usize)) {
+        for (i, system) in self.systems.iter_mut().enumerate() {
+            before(game, i);
             system.run(game);
-            in_between(game);
         }
     }
 }

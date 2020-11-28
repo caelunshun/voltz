@@ -1,7 +1,7 @@
 use std::cell::{RefCell, RefMut};
 
 use bumpalo::Bump;
-use common::{entity::player::PlayerBundle, world::SparseZone, World};
+use common::{entity::player::PlayerBundle, event::EventBus, world::SparseZone, World};
 use hecs::{Entity, EntityRef};
 use protocol::{bridge::ToServer, Bridge};
 use rand::{Rng, SeedableRng};
@@ -23,6 +23,9 @@ pub struct Game {
     ///
     /// This does not contain entities or block entities.
     world: World<SparseZone>,
+
+    /// Event bus.
+    events: RefCell<EventBus>,
 
     /// Bump allocator for the main thread.
     /// Reset each tick.
@@ -50,10 +53,13 @@ impl Game {
 
         let rng = RefCell::new(Pcg64Mcg::from_entropy());
 
+        let events = RefCell::new(EventBus::new());
+
         Self {
             ecs,
             player,
             world,
+            events,
             bump,
             rng,
             bridge,
@@ -80,6 +86,11 @@ impl Game {
     /// Gets an [`EntityRef`](hecs::EntityRef) for the player using this client.
     pub fn player_ref(&self) -> EntityRef {
         self.ecs.entity(self.player).expect("player despawned")
+    }
+
+    /// Gets the event bus for queuing and processing events.
+    pub fn events(&self) -> RefMut<EventBus> {
+        self.events.borrow_mut()
     }
 
     /// Gets the bump allocator. Use this allocator for temporary

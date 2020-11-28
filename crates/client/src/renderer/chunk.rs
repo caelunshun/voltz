@@ -1,10 +1,15 @@
 use std::sync::Arc;
 
-use ahash::AHashMap;
+use ahash::{AHashMap, AHashSet};
 use anyhow::{bail, Context};
-use mesher::ChunkMesher;
+use common::ChunkPos;
+use mesher::{ChunkMesher, GpuMesh};
 
-use crate::asset::{texture::TextureAsset, Assets};
+use crate::{
+    asset::{texture::TextureAsset, Assets},
+    event::{ChunkLoaded, ChunkUnloaded},
+    game::Game,
+};
 
 use super::{utils::TextureArray, Resources};
 
@@ -20,6 +25,9 @@ pub struct ChunkRenderer {
     /// Maps block slug => texture index into `block_textures`.
     block_texture_indexes: AHashMap<String, u32>,
     mesher: ChunkMesher,
+
+    meshes: AHashMap<ChunkPos, GpuMesh>,
+    pending_meshes: AHashSet<ChunkPos>,
 }
 
 impl ChunkRenderer {
@@ -40,7 +48,41 @@ impl ChunkRenderer {
             block_textures,
             block_texture_indexes,
             mesher,
+            meshes: AHashMap::new(),
+            pending_meshes: AHashSet::new(),
         })
+    }
+
+    pub fn prep_render(&mut self, game: &mut Game) {
+        self.update_chunk_meshes(game);
+    }
+
+    fn update_chunk_meshes(&mut self, game: &mut Game) {
+        for event in game.events().iter::<ChunkLoaded>() {
+            if let Some(chunk) = game.main_zone().chunk(event.pos) {
+                self.mesher.spawn(event.pos, chunk.clone());
+                log::trace!("Spawning mesher task for {:?}", event.pos);
+                self.pending_meshes.insert(event.pos);
+            }
+        }
+
+        for event in game.events().iter::<ChunkUnloaded>() {
+            self.meshes.remove(&event.pos);
+            self.pending_meshes.remove(&event.pos);
+
+            log::trace!("Dropping chunk mesh for {:?}", event.pos);
+        }
+
+        for (pos, finished_mesh) in self.mesher.iter_finished() {
+            if self.pending_meshes.remove(&pos) {
+                self.meshes.insert(pos, finished_mesh);
+                log::trace!(
+                    "Loaded mesh for {:?}. Total meshes: {}",
+                    pos,
+                    self.meshes.len()
+                );
+            }
+        }
     }
 }
 

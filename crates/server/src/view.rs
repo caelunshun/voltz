@@ -52,8 +52,9 @@ fn update_views<'g>(game: &'g Game) -> Vec<UpdatedView, &'g Bump> {
     // Process newly joined players, whose views also need updating.
     for event in game.events().iter::<PlayerJoined>() {
         let player = event.player;
-        let view = game.ecs().get::<View>(player).unwrap();
-        updated.push((player, View::empty(), *view));
+        if let Ok(view) = game.ecs().get::<View>(player) {
+            updated.push((player, View::empty(), *view));
+        }
     }
 
     updated
@@ -70,11 +71,13 @@ fn update_chunks(players: &[UpdatedView], game: &Game) {
         let mut chunks_to_load = Vec::new_in(game.bump());
         chunks_to_load.extend(new_chunks.difference(&old_chunks));
         // Send closest chunks first.
-        chunks_to_load.sort_by_key(|chunk: &ChunkPos| chunk.manhattan_distance(new_view.center()));
+        chunks_to_load
+            .sort_unstable_by_key(|chunk: &ChunkPos| chunk.manhattan_distance(new_view.center()));
 
         let mailbox = game.ecs().get::<Mailbox>(player).unwrap();
         let username = game.ecs().get::<Username>(player).unwrap();
 
+        let mut loaded = 0;
         for chunk_to_load in chunks_to_load {
             if let Some(chunk) = game.main_zone().chunk(chunk_to_load) {
                 let packet = ServerPacket::LoadChunk(LoadChunk {
@@ -83,8 +86,10 @@ fn update_chunks(players: &[UpdatedView], game: &Game) {
                 });
                 log::trace!("Loading {:?} for {}", chunk_to_load, username.0);
                 mailbox.send(packet);
+                loaded += 1;
             }
         }
+        log::debug!("Sent {} chunks to {}", loaded, username.0);
 
         for &chunk_to_unload in old_chunks.difference(&new_chunks) {
             let packet = ServerPacket::UnloadChunk(UnloadChunk {
