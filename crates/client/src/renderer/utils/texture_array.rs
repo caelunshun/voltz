@@ -125,6 +125,6 @@ impl TextureArray {
         );
         self.texture = new_texture;
 
-        self.free.extend(old_cap..new_cap);
+        self.free.extend((old_cap..new_cap).rev());
     }
 }

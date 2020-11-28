@@ -202,7 +202,7 @@ fn mesh_naive(state: &mut State, pos: [usize; 3], prisms: &[Prism]) {
 /// to mesh as many blocks as possible with a single prism.
 ///
 /// Only works on full cubes (1x1x1) for now.
-fn mesh_greedy(state: &mut State, pos: [usize; 3], palette_index: usize, _prism: &Prism) {
+fn mesh_greedy(state: &mut State, pos: [usize; 3], palette_index: usize, prism: &Prism) {
     // Extend the block in the X, then the Z, then the Y axes.
     fn index(x: usize, y: usize, z: usize) -> usize {
         y * CHUNK_DIM * CHUNK_DIM + z * CHUNK_DIM + x
@@ -252,7 +252,16 @@ fn mesh_greedy(state: &mut State, pos: [usize; 3], palette_index: usize, _prism:
         (y - pos[1] + 1) as f32,
         (z - pos[2] + 1) as f32,
     );
-    state.mesh.push_cube(offset, size, [Vec3::zero(); 4]);
+    state.mesh.push_cube(
+        offset,
+        size,
+        [
+            glam::vec3(0., 0., prism.textures[0] as f32),
+            glam::vec3(1., 0., prism.textures[0] as f32),
+            glam::vec3(1., 1., prism.textures[0] as f32),
+            glam::vec3(0., 1., prism.textures[0] as f32),
+        ],
+    );
 
     // Mark processed blocks as finished.
     for y in pos[1]..=y {

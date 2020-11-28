@@ -15,10 +15,13 @@ use self::compile::CompiledModel;
 mod algo;
 mod compile;
 
+pub use algo::RawVertex;
+
 /// A mesh uploaded to the GPU.
 #[derive(Debug)]
 pub struct GpuMesh {
     pub vertex_buffer: wgpu::Buffer,
+    pub vertex_count: u32,
 }
 
 /// Meshes a chunk, i.e. transforms a volume of blocks into
@@ -122,6 +125,9 @@ impl Mesher {
                     usage: wgpu::BufferUsage::VERTEX,
                 });
 
-        GpuMesh { vertex_buffer }
+        GpuMesh {
+            vertex_buffer,
+            vertex_count: mesh.vertices.len() as u32,
+        }
     }
 }

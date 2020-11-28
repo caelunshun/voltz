@@ -3,3 +3,5 @@ groups:
     loader: YamlModel
   texture/:
     loader: Png
+  shader_compiled/:
+    loader: Spirv

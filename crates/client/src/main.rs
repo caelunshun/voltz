@@ -4,7 +4,7 @@
 use std::thread;
 
 use anyhow::{anyhow, bail, Context};
-use asset::{model::YamlModel, texture::PngLoader, Assets, YamlLoader};
+use asset::{model::YamlModel, shader::SpirvLoader, texture::PngLoader, Assets, YamlLoader};
 use bumpalo::Bump;
 use common::{entity::player::PlayerBundle, Orient, Pos, SystemExecutor};
 use conn::Connection;
@@ -76,7 +76,7 @@ impl Client {
 
 fn main() -> anyhow::Result<()> {
     SimpleLogger::new()
-        .with_level(log::LevelFilter::Trace)
+        .with_level(log::LevelFilter::Debug)
         .init()?;
     let assets = load_assets()?;
     let (window, event_pump) =
@@ -117,7 +117,8 @@ fn load_assets() -> anyhow::Result<Assets> {
     let mut assets = Assets::new();
     assets
         .add_loader("YamlModel", YamlLoader::<YamlModel>::new())
-        .add_loader("Png", PngLoader::new());
+        .add_loader("Png", PngLoader::new())
+        .add_loader("Spirv", SpirvLoader::new());
     assets.load_dir("assets").context("failed to load assets")?;
     Ok(assets)
 }
@@ -186,7 +187,7 @@ fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<Pos> {
 }
 
 fn setup() -> SystemExecutor<Game> {
-    let mut systems = SystemExecutor::new();
+    let systems = SystemExecutor::new();
 
     systems
 }
