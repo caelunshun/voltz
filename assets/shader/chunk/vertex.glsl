@@ -3,7 +3,7 @@
 layout (location = 0) in vec3 a_pos;
 layout (location = 1) in vec3 a_texcoord;
 
-layout (location = 10) out vec3 v_texcoord;
+layout (location = 0) out vec3 v_texcoord;
 
 layout (set = 0, binding = 0) uniform Uniforms {
     mat4 u_transform;
