@@ -114,7 +114,7 @@ fn generate_world() -> Zone {
         for y in 0..16 {
             for z in -WORLD_SIZE..=WORLD_SIZE {
                 let mut chunk = Chunk::new();
-                if y <= 4 {
+                if y < 4 {
                     chunk.fill(BlockId::new(blocks::Stone));
                 }
                 builder.add_chunk(ChunkPos { x, y, z }, chunk).unwrap();

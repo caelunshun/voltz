@@ -57,7 +57,7 @@ impl Connection {
                     };
                     self.bridge.send(ServerPacket::ServerInfo(server_info));
 
-                    let pos = glam::vec3a(0., 100., 0.);
+                    let pos = glam::vec3a(0., 64., 0.);
                     let join_game = JoinGame { pos };
                     self.bridge.send(ServerPacket::JoinGame(join_game));
 

@@ -276,7 +276,7 @@ impl ChunkRenderer {
         let pos = player.get::<Pos>().unwrap().0;
         let view = Mat4::look_at_lh(
             Vec3::from(pos) + glam::vec3(0., EYE_HEIGHT, 0.),
-            glam::vec3(10., 101., 10.),
+            glam::vec3(10., 64., 10.),
             Vec3::unit_y(),
         );
         let projection = Mat4::perspective_lh(70.0f32.to_radians(), 16. / 9., 0.1, 1000.);
