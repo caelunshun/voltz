@@ -17,7 +17,7 @@ use protocol::{
     Bridge, PROTOCOL_VERSION,
 };
 use renderer::Renderer;
-use sdl2::{event::Event, video::Window, EventPump};
+use sdl2::{event::Event, event::WindowEvent, video::Window, EventPump};
 use server::Server;
 use simple_logger::SimpleLogger;
 
@@ -56,6 +56,12 @@ impl Client {
         for event in self.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => self.open = false,
+                Event::Window { win_event, .. } => match win_event {
+                    WindowEvent::Resized(_, _) => self
+                        .renderer
+                        .on_resize(self.window.size().0, self.window.size().1),
+                    _ => (),
+                },
                 _ => (),
             }
         }
@@ -134,6 +140,7 @@ fn init_sdl2() -> Result<(Window, EventPump), String> {
     let window = video
         .window(title, width, height)
         .allow_highdpi()
+        .resizable()
         .build()
         .map_err(|e| e.to_string())?;
     let event_pump = sdl2.event_pump()?;

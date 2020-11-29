@@ -271,7 +271,12 @@ impl ChunkRenderer {
         }
     }
 
-    pub fn do_render<'a>(&'a mut self, pass: &mut wgpu::RenderPass<'a>, game: &mut Game) {
+    pub fn do_render<'a>(
+        &'a mut self,
+        pass: &mut wgpu::RenderPass<'a>,
+        game: &mut Game,
+        aspect_ratio: f32,
+    ) {
         pass.set_pipeline(&self.pipeline);
 
         const EYE_HEIGHT: f32 = 5.;
@@ -284,7 +289,7 @@ impl ChunkRenderer {
             glam::vec3(10., 64., 10.),
             Vec3::unit_y(),
         );
-        let projection = Mat4::perspective_lh(70.0f32.to_radians(), 16. / 9., 0.1, 1000.);
+        let projection = Mat4::perspective_lh(70.0f32.to_radians(), aspect_ratio, 0.1, 1000.);
         let view_projection = projection * view;
 
         // Render each chunk.

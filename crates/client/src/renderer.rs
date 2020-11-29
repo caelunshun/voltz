@@ -115,6 +115,15 @@ impl Renderer {
         })
     }
 
+    pub fn on_resize(&mut self, new_width: u32, new_height: u32) {
+        self.presenter = Presenter::new(
+            self.resources.device(),
+            self.resources.surface(),
+            new_width,
+            new_height,
+        );
+    }
+
     /// Renders a frame.
     pub fn render(&mut self, game: &mut Game) {
         self.prep_render(game);
@@ -163,7 +172,8 @@ impl Renderer {
                 }),
             });
 
-            self.chunk_renderer.do_render(&mut pass, game);
+            let aspect_ratio = self.presenter.width() as f32 / self.presenter.height() as f32;
+            self.chunk_renderer.do_render(&mut pass, game, aspect_ratio);
         }
 
         self.resources.queue().submit(vec![encoder.finish()]);

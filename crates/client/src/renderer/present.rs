@@ -61,6 +61,14 @@ impl Presenter {
         }
     }
 
+    pub fn width(&self) -> u32 {
+        self.sc_desc.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.sc_desc.height
+    }
+
     pub fn swapchain(&mut self) -> &mut wgpu::SwapChain {
         &mut self.sc
     }
