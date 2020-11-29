@@ -3,7 +3,7 @@
 use ahash::AHashMap;
 use bumpalo::Bump;
 use common::{chunk::CHUNK_DIM, chunk::CHUNK_VOLUME, Chunk};
-use glam::Vec3;
+use glam::{Vec2, Vec3, Vec3Swizzles};
 use utils::BitSet;
 
 use super::compile::{CompiledModel, Prism};
@@ -20,16 +20,10 @@ impl Mesh<'_> {
         let offset = offset + vec3(prism.offset);
         let size = vec3(prism.extent);
 
-        let t1 = glam::vec3(0., 0., prism.textures[0] as f32);
-        let t2 = glam::vec3(1., 0., prism.textures[0] as f32);
-        let t3 = glam::vec3(1., 1., prism.textures[0] as f32);
-        let t4 = glam::vec3(0., 1., prism.textures[0] as f32);
-        let ts = [t1, t2, t3, t4];
-
-        self.push_cube(offset, size, ts);
+        self.push_cube(offset, size, prism.textures);
     }
 
-    pub fn push_cube(&mut self, offset: Vec3, size: Vec3, ts: [Vec3; 4]) {
+    pub fn push_cube(&mut self, offset: Vec3, size: Vec3, textures: [u32; 6]) {
         let x0y0z0 = offset;
         let x1y0z0 = offset + size * glam::vec3(1., 0., 0.);
         let x1y0z1 = offset + size * glam::vec3(1., 0., 1.);
@@ -40,40 +34,65 @@ impl Mesh<'_> {
         let x1y1z1 = offset + size * glam::vec3(1., 1., 1.);
         let x0y1z1 = offset + size * glam::vec3(0., 1., 1.);
 
-        fn quad(corners: &[Vec3; 4], ts: &[Vec3; 4]) -> [RawVertex; 4] {
+        fn quad(corners: &[Vec3; 4], size: Vec2, texture: f32) -> [RawVertex; 4] {
+            let size = glam::vec3(size.x, size.y, 1.);
             [
                 RawVertex {
                     pos: corners[0],
-                    texcoord: ts[0],
+                    texcoord: glam::vec3(0., 0., texture) * size,
                 },
                 RawVertex {
                     pos: corners[1],
-                    texcoord: ts[1],
+                    texcoord: glam::vec3(1., 0., texture) * size,
                 },
                 RawVertex {
                     pos: corners[2],
-                    texcoord: ts[2],
+                    texcoord: glam::vec3(1., 1., texture) * size,
                 },
                 RawVertex {
                     pos: corners[3],
-                    texcoord: ts[3],
+                    texcoord: glam::vec3(0., 1., texture) * size,
                 },
             ]
         }
 
         let quads = [
             // Bottom
-            quad(&[x0y0z0, x1y0z0, x1y0z1, x0y0z1], &ts),
+            quad(
+                &[x0y0z0, x1y0z0, x1y0z1, x0y0z1],
+                size.xz(),
+                textures[1] as f32,
+            ),
             // Top
-            quad(&[x0y1z0, x1y1z0, x1y1z1, x0y1z1], &ts),
+            quad(
+                &[x0y1z0, x1y1z0, x1y1z1, x0y1z1],
+                size.xz(),
+                textures[0] as f32,
+            ),
             // Negative X
-            quad(&[x0y0z0, x0y1z0, x0y1z1, x0y0z1], &ts),
+            quad(
+                &[x0y0z0, x0y1z0, x0y1z1, x0y0z1],
+                size.yz(),
+                textures[3] as f32,
+            ),
             // Positive X
-            quad(&[x1y0z0, x1y1z0, x1y1z1, x1y0z1], &ts),
+            quad(
+                &[x1y0z0, x1y1z0, x1y1z1, x1y0z1],
+                size.yz(),
+                textures[2] as f32,
+            ),
             // Negative Z
-            quad(&[x0y0z0, x1y0z0, x1y1z0, x0y1z0], &ts),
+            quad(
+                &[x0y0z0, x1y0z0, x1y1z0, x0y1z0],
+                size.xy(),
+                textures[5] as f32,
+            ),
             // Positive Z
-            quad(&[x0y0z1, x1y0z1, x1y1z1, x0y1z1], &ts),
+            quad(
+                &[x0y0z1, x1y0z1, x1y1z1, x0y1z1],
+                size.xy(),
+                textures[4] as f32,
+            ),
         ];
         for &quad in &quads {
             self.push_quad(quad);
@@ -252,16 +271,7 @@ fn mesh_greedy(state: &mut State, pos: [usize; 3], palette_index: usize, prism: 
         (y - pos[1] + 1) as f32,
         (z - pos[2] + 1) as f32,
     );
-    state.mesh.push_cube(
-        offset,
-        size,
-        [
-            glam::vec3(0., 0., prism.textures[0] as f32),
-            glam::vec3(1., 0., prism.textures[0] as f32),
-            glam::vec3(1., 1., prism.textures[0] as f32),
-            glam::vec3(0., 1., prism.textures[0] as f32),
-        ],
-    );
+    state.mesh.push_cube(offset, size, prism.textures);
 
     // Mark processed blocks as finished.
     for y in pos[1]..=y {
