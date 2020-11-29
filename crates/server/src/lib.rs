@@ -5,7 +5,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use common::{blocks, world::ZoneBuilder, BlockId, Chunk, ChunkPos, SystemExecutor, Zone};
+use common::{
+    blocks, chunk::CHUNK_DIM, world::ZoneBuilder, BlockId, Chunk, ChunkPos, SystemExecutor, Zone,
+};
 pub use conn::Connection;
 use game::Game;
 use panic::AssertUnwindSafe;
@@ -116,6 +118,14 @@ fn generate_world() -> Zone {
                 let mut chunk = Chunk::new();
                 if y < 4 {
                     chunk.fill(BlockId::new(blocks::Stone));
+                } else if y == 4 {
+                    for x in (0..CHUNK_DIM).step_by(4) {
+                        for z in (0..CHUNK_DIM).step_by(4) {
+                            for y in 0..2 {
+                                chunk.set(x, y, z, BlockId::new(blocks::Melium));
+                            }
+                        }
+                    }
                 }
                 builder.add_chunk(ChunkPos { x, y, z }, chunk).unwrap();
             }

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use futures_executor::block_on;
+use present::Presenter;
 use sdl2::video::Window;
 
 use crate::{asset::Assets, game::Game};
@@ -9,9 +10,12 @@ use crate::{asset::Assets, game::Game};
 use self::chunk::ChunkRenderer;
 
 mod chunk;
+mod present;
 mod utils;
 
 const SC_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
+const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
+const SAMPLE_COUNT: u32 = 8;
 
 #[derive(Debug)]
 pub struct Resources {
@@ -43,7 +47,7 @@ impl Resources {
 pub struct Renderer {
     resources: Arc<Resources>,
     chunk_renderer: ChunkRenderer,
-    swap_chain: wgpu::SwapChain,
+    presenter: Presenter,
 }
 
 impl Renderer {
@@ -90,16 +94,7 @@ impl Renderer {
         });
 
         let (width, height) = window.size();
-        let sc_desc = wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
-            format: SC_FORMAT,
-            width,
-            height,
-            present_mode: wgpu::PresentMode::Mailbox,
-        };
-        let swap_chain = resources
-            .device()
-            .create_swap_chain(resources.surface(), &sc_desc);
+        let presenter = Presenter::new(resources.device(), resources.surface(), width, height);
 
         let mut init_encoder =
             resources
@@ -116,7 +111,7 @@ impl Renderer {
         Ok(Self {
             resources,
             chunk_renderer,
-            swap_chain,
+            presenter,
         })
     }
 
@@ -138,15 +133,16 @@ impl Renderer {
                     label: Some("render_frame"),
                 });
         let frame = self
-            .swap_chain
+            .presenter
+            .swapchain()
             .get_current_frame()
             .expect("failed to get next output frame");
 
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
-                    attachment: &frame.output.view,
-                    resolve_target: None,
+                    attachment: self.presenter.sample_buffer(),
+                    resolve_target: Some(&frame.output.view),
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
                             r: 0.1,
@@ -157,7 +153,14 @@ impl Renderer {
                         store: true,
                     },
                 }],
-                depth_stencil_attachment: None,
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachmentDescriptor {
+                    attachment: self.presenter.depth_buffer(),
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.),
+                        store: true,
+                    }),
+                    stencil_ops: None,
+                }),
             });
 
             self.chunk_renderer.do_render(&mut pass, game);

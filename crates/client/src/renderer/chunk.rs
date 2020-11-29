@@ -15,7 +15,7 @@ use crate::{
 
 use self::mesher::RawVertex;
 
-use super::{utils::TextureArray, Resources, SC_FORMAT};
+use super::{utils::TextureArray, Resources, DEPTH_FORMAT, SAMPLE_COUNT, SC_FORMAT};
 
 mod mesher;
 
@@ -155,7 +155,12 @@ impl ChunkRenderer {
                     alpha_blend: wgpu::BlendDescriptor::REPLACE,
                     write_mask: wgpu::ColorWrite::ALL,
                 }],
-                depth_stencil_state: None,
+                depth_stencil_state: Some(wgpu::DepthStencilStateDescriptor {
+                    format: DEPTH_FORMAT,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::Less,
+                    stencil: wgpu::StencilStateDescriptor::default(),
+                }),
                 vertex_state: wgpu::VertexStateDescriptor {
                     index_format: wgpu::IndexFormat::Uint16,
                     vertex_buffers: &[wgpu::VertexBufferDescriptor {
@@ -164,7 +169,7 @@ impl ChunkRenderer {
                         attributes: &wgpu::vertex_attr_array![0 => Float3, 1 => Float3],
                     }],
                 },
-                sample_count: 1,
+                sample_count: SAMPLE_COUNT,
                 sample_mask: !0,
                 alpha_to_coverage_enabled: false,
             });
@@ -269,7 +274,7 @@ impl ChunkRenderer {
     pub fn do_render<'a>(&'a mut self, pass: &mut wgpu::RenderPass<'a>, game: &mut Game) {
         pass.set_pipeline(&self.pipeline);
 
-        const EYE_HEIGHT: f32 = 1.7;
+        const EYE_HEIGHT: f32 = 5.;
 
         // Determine view and projection matrix.
         let player = game.player_ref();
