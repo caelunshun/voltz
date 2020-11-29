@@ -2,7 +2,7 @@
 
 use common::{Chunk, ChunkPos};
 use derivative::Derivative;
-use glam::Vec3A;
+use glam::{Vec2, Vec3A};
 use serde::{Deserialize, Serialize};
 
 use super::shared::SharedPacket;
@@ -34,6 +34,8 @@ pub struct ServerInfo {
 pub struct JoinGame {
     /// The player's initial position.
     pub pos: Vec3A,
+    /// The player's initial orientation.
+    pub orient: Vec2,
 }
 
 /// Loads a chunk on the client.

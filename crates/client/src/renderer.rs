@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use futures_executor::block_on;
+use glam::Mat4;
 use present::Presenter;
 use sdl2::video::Window;
 
@@ -125,16 +126,16 @@ impl Renderer {
     }
 
     /// Renders a frame.
-    pub fn render(&mut self, game: &mut Game) {
+    pub fn render(&mut self, game: &mut Game, view_projection: Mat4) {
         self.prep_render(game);
-        self.do_render(game);
+        self.do_render(game, view_projection);
     }
 
     fn prep_render(&mut self, game: &mut Game) {
         self.chunk_renderer.prep_render(&self.resources, game);
     }
 
-    fn do_render(&mut self, game: &mut Game) {
+    fn do_render(&mut self, game: &mut Game, view_projection: Mat4) {
         let mut encoder =
             self.resources
                 .device()
@@ -172,8 +173,8 @@ impl Renderer {
                 }),
             });
 
-            let aspect_ratio = self.presenter.width() as f32 / self.presenter.height() as f32;
-            self.chunk_renderer.do_render(&mut pass, game, aspect_ratio);
+            self.chunk_renderer
+                .do_render(&mut pass, game, view_projection);
         }
 
         self.resources.queue().submit(vec![encoder.finish()]);

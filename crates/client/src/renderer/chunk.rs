@@ -2,8 +2,8 @@ use std::{collections::BTreeMap, mem::size_of, sync::Arc};
 
 use ahash::{AHashMap, AHashSet};
 use anyhow::{bail, Context};
-use common::{chunk::CHUNK_DIM, ChunkPos, Pos};
-use glam::{Mat4, Vec3};
+use common::{chunk::CHUNK_DIM, ChunkPos};
+use glam::Mat4;
 use mesher::{ChunkMesher, GpuMesh};
 use wgpu::util::DeviceExt;
 
@@ -145,7 +145,7 @@ impl ChunkRenderer {
                 }),
                 rasterization_state: Some(wgpu::RasterizationStateDescriptor {
                     front_face: wgpu::FrontFace::Ccw,
-                    cull_mode: wgpu::CullMode::Back,
+                    cull_mode: wgpu::CullMode::None,
                     ..Default::default()
                 }),
                 primitive_topology: wgpu::PrimitiveTopology::TriangleList,
@@ -274,23 +274,10 @@ impl ChunkRenderer {
     pub fn do_render<'a>(
         &'a mut self,
         pass: &mut wgpu::RenderPass<'a>,
-        game: &mut Game,
-        aspect_ratio: f32,
+        _game: &mut Game,
+        view_projection: Mat4,
     ) {
         pass.set_pipeline(&self.pipeline);
-
-        const EYE_HEIGHT: f32 = 5.;
-
-        // Determine view and projection matrix.
-        let player = game.player_ref();
-        let pos = player.get::<Pos>().unwrap().0;
-        let view = Mat4::look_at_lh(
-            Vec3::from(pos) + glam::vec3(0., EYE_HEIGHT, 0.),
-            glam::vec3(10., 64., 10.),
-            Vec3::unit_y(),
-        );
-        let projection = Mat4::perspective_lh(70.0f32.to_radians(), aspect_ratio, 0.1, 1000.);
-        let view_projection = projection * view;
 
         // Render each chunk.
         for chunk_data in self.chunks.values() {
