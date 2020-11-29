@@ -9,6 +9,7 @@ use wgpu::util::DeviceExt;
 
 use crate::{
     asset::{shader::ShaderAsset, texture::TextureAsset, Assets},
+    camera::Matrices,
     event::{ChunkLoaded, ChunkUnloaded},
     game::Game,
 };
@@ -117,7 +118,7 @@ impl ChunkRenderer {
                     bind_group_layouts: &[&bg_layout],
                     push_constant_ranges: &[wgpu::PushConstantRange {
                         stages: wgpu::ShaderStage::VERTEX,
-                        range: 0..size_of::<Mat4>() as u32,
+                        range: 0..size_of::<Mat4>() as u32 * 2,
                     }],
                 });
         let vertex = resources.device().create_shader_module(
@@ -275,7 +276,7 @@ impl ChunkRenderer {
         &'a mut self,
         pass: &mut wgpu::RenderPass<'a>,
         _game: &mut Game,
-        view_projection: Mat4,
+        matrices: Matrices,
     ) {
         pass.set_pipeline(&self.pipeline);
 
@@ -286,7 +287,7 @@ impl ChunkRenderer {
             pass.set_push_constants(
                 wgpu::ShaderStage::VERTEX,
                 0,
-                bytemuck::cast_slice(&[view_projection]),
+                bytemuck::cast_slice(&[matrices]),
             );
             pass.draw(0..chunk_data.mesh.vertex_count, 0..1);
         }

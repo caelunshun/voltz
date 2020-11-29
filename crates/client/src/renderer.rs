@@ -2,11 +2,10 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use futures_executor::block_on;
-use glam::Mat4;
 use present::Presenter;
 use sdl2::video::Window;
 
-use crate::{asset::Assets, game::Game};
+use crate::{asset::Assets, camera::Matrices, game::Game};
 
 use self::chunk::ChunkRenderer;
 
@@ -126,16 +125,16 @@ impl Renderer {
     }
 
     /// Renders a frame.
-    pub fn render(&mut self, game: &mut Game, view_projection: Mat4) {
+    pub fn render(&mut self, game: &mut Game, matrices: Matrices) {
         self.prep_render(game);
-        self.do_render(game, view_projection);
+        self.do_render(game, matrices);
     }
 
     fn prep_render(&mut self, game: &mut Game) {
         self.chunk_renderer.prep_render(&self.resources, game);
     }
 
-    fn do_render(&mut self, game: &mut Game, view_projection: Mat4) {
+    fn do_render(&mut self, game: &mut Game, matrices: Matrices) {
         let mut encoder =
             self.resources
                 .device()
@@ -173,8 +172,7 @@ impl Renderer {
                 }),
             });
 
-            self.chunk_renderer
-                .do_render(&mut pass, game, view_projection);
+            self.chunk_renderer.do_render(&mut pass, game, matrices);
         }
 
         self.resources.queue().submit(vec![encoder.finish()]);

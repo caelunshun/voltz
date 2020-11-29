@@ -1,12 +1,19 @@
+use crate::game::Game;
+use bytemuck::{Pod, Zeroable};
 use common::{Orient, Pos};
 use glam::{Mat4, Vec2, Vec3, Vec3A};
 use sdl2::keyboard::{KeyboardState, Scancode};
 
-use crate::game::Game;
-
 const MOUSE_SENSITIVITY: f32 = 4.;
 const KEYBOARD_SENSITIVITY: f32 = 0.2;
 const EYE_HEIGHT: f32 = 5.;
+
+#[derive(Copy, Clone, Zeroable, Pod)]
+#[repr(C)]
+pub struct Matrices {
+    pub view: Mat4,
+    pub projection: Mat4,
+}
 
 pub struct CameraController;
 
@@ -44,7 +51,7 @@ impl CameraController {
     }
 
     /// Returns the view-projection matrix that should be passed to shaders.
-    pub fn view_projection(&mut self, game: &mut Game, aspect_ratio: f32) -> Mat4 {
+    pub fn matrices(&mut self, game: &mut Game, aspect_ratio: f32) -> Matrices {
         let pos = game.player_ref().get::<Pos>().unwrap().0;
         let orient = game.player_ref().get::<Orient>().unwrap().0;
 
@@ -57,7 +64,7 @@ impl CameraController {
         let view = Mat4::look_at_lh(eye.into(), center, Vec3::unit_y());
         let projection = Mat4::perspective_lh(70., aspect_ratio, 0.1, 1000.);
 
-        projection * view
+        Matrices { view, projection }
     }
 
     /// Determines the direction vector of the player.

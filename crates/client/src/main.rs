@@ -95,8 +95,8 @@ impl Client {
     fn render(&mut self) {
         let (width, height) = self.window.size();
         let aspect_ratio = width as f32 / height as f32;
-        let view_projection = self.camera.view_projection(&mut self.game, aspect_ratio);
-        self.renderer.render(&mut self.game, view_projection);
+        let matrices = self.camera.matrices(&mut self.game, aspect_ratio);
+        self.renderer.render(&mut self.game, matrices);
     }
 }
 
