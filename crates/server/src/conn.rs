@@ -1,8 +1,8 @@
 use common::{
     entity::player::{Username, View},
-    ChunkPos, Pos,
+    ChunkPos, Orient, Pos,
 };
-use glam::Vec3A;
+use glam::{Vec2, Vec3A};
 use hecs::Entity;
 use protocol::{
     bridge::ToClient,
@@ -62,7 +62,7 @@ impl Connection {
                     let join_game = JoinGame { pos, orient };
                     self.bridge.send(ServerPacket::JoinGame(join_game));
 
-                    self.spawn_player(game, pos, client_info);
+                    self.spawn_player(game, pos, orient, client_info);
                 }
                 _ => {
                     log::debug!(
@@ -76,12 +76,14 @@ impl Connection {
         }
     }
 
-    fn spawn_player(&mut self, game: &mut Game, pos: Vec3A, client_info: ClientInfo) {
+    fn spawn_player(&mut self, game: &mut Game, pos: Vec3A, orient: Vec2, client_info: ClientInfo) {
         log::info!("{} joined the game.", client_info.username);
         let pos = Pos(pos);
+        let orient = Orient(orient);
 
         let player = game.ecs_mut().spawn((
             pos,
+            orient,
             Username(client_info.username),
             self.bridge.clone(),
             View::new(ChunkPos::from_pos(pos), VIEW_DISTANCE),
@@ -116,6 +118,10 @@ impl Connection {
                         entity.get::<Username>().unwrap().0
                     );
                     self.disconnect(Some("received ClientInfo during game state".to_owned()));
+                }
+                ClientPacket::UpdatePosition(pos) => {
+                    entity.get_mut::<Pos>().unwrap().0 = pos.new_pos;
+                    entity.get_mut::<Orient>().unwrap().0 = pos.new_orient;
                 }
             }
         }

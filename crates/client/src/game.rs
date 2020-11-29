@@ -126,4 +126,9 @@ impl Game {
     pub fn main_zone_mut(&mut self) -> &mut SparseZone {
         self.world_mut().main_zone_mut()
     }
+
+    /// Gets the bridge for sending packets to the server.
+    pub fn bridge(&self) -> &Bridge<ToServer> {
+        &self.bridge
+    }
 }

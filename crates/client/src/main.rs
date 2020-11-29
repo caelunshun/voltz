@@ -30,6 +30,7 @@ mod conn;
 mod event;
 mod game;
 mod renderer;
+mod update_server;
 
 pub struct Client {
     assets: Assets,
@@ -209,7 +210,9 @@ fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<(Pos, Orient)> {
 }
 
 fn setup() -> SystemExecutor<Game> {
-    let systems = SystemExecutor::new();
+    let mut systems = SystemExecutor::new();
+
+    update_server::setup(&mut systems);
 
     systems
 }

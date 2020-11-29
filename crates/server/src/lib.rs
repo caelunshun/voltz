@@ -98,7 +98,7 @@ impl Server {
 }
 
 fn generate_world() -> Zone {
-    const WORLD_SIZE: i32 = 4;
+    const WORLD_SIZE: i32 = 8;
     let mut builder = ZoneBuilder::new(
         ChunkPos {
             x: -WORLD_SIZE,
@@ -118,7 +118,7 @@ fn generate_world() -> Zone {
                 let mut chunk = Chunk::new();
                 if y < 4 {
                     chunk.fill(BlockId::new(blocks::Stone));
-                } else if y == 4 {
+                } else if y == 4 && x.abs() <= 4 && z.abs() <= 4 {
                     for x in (0..CHUNK_DIM).step_by(4) {
                         for z in (0..CHUNK_DIM).step_by(4) {
                             for y in 0..2 {

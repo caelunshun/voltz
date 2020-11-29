@@ -91,12 +91,15 @@ fn update_chunks(players: &[UpdatedView], game: &Game) {
         }
         log::debug!("Sent {} chunks to {}", loaded, username.0);
 
+        let mut unloaded = 0;
         for &chunk_to_unload in old_chunks.difference(&new_chunks) {
             let packet = ServerPacket::UnloadChunk(UnloadChunk {
                 pos: chunk_to_unload,
             });
             log::trace!("Unloading {:?} for {}", chunk_to_unload, username.0);
             mailbox.send(packet);
+            unloaded += 1;
         }
+        log::debug!("Unloaded {} chunks for {}", unloaded, username.0);
     }
 }
