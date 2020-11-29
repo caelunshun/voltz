@@ -65,7 +65,7 @@ impl Mesh<'_> {
             // Bottom
             quad(&[x0y0z0, x1y0z0, x1y0z1, x0y0z1], &ts),
             // Top
-            quad(&[x0y1z0, x1y1z0, x1y1z1, x0y1z0], &ts),
+            quad(&[x0y1z0, x1y1z0, x1y1z1, x0y1z1], &ts),
             // Negative X
             quad(&[x0y0z0, x0y1z0, x0y1z1, x0y0z1], &ts),
             // Positive X
