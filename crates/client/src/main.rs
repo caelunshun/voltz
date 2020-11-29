@@ -18,7 +18,9 @@ use protocol::{
     Bridge, PROTOCOL_VERSION,
 };
 use renderer::Renderer;
-use sdl2::{event::Event, event::WindowEvent, video::Window, EventPump, Sdl};
+use sdl2::{
+    event::Event, event::WindowEvent, keyboard::KeyboardState, video::Window, EventPump, Sdl,
+};
 use server::Server;
 use simple_logger::SimpleLogger;
 
@@ -58,6 +60,8 @@ impl Client {
     }
 
     fn handle_events(&mut self) {
+        self.camera
+            .tick_keyboard(&mut self.game, KeyboardState::new(&self.event_pump));
         for event in self.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => self.open = false,
