@@ -361,6 +361,11 @@ pub fn resolve_collisions(
     end: Vec3A,
     mut is_solid: impl FnMut(BlockPos) -> bool,
 ) -> Vec3A {
+    // Work with bounding box origin instead of center bottom.
+    let center_offset = vec3a(bounds.half_width(), 0., bounds.half_depth());
+    let start = start - center_offset;
+    let end = end - center_offset;
+
     let mut pos = end;
     let vel = end - start;
 
@@ -379,7 +384,7 @@ pub fn resolve_collisions(
         pos.x = start.x;
     }
 
-    pos
+    pos + center_offset
 }
 
 /*

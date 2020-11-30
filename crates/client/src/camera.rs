@@ -75,7 +75,7 @@ impl CameraController {
         let center = Vec3::from(eye) + direction;
 
         let view = Mat4::look_at_lh(eye.into(), center, Vec3::unit_y());
-        let projection = Mat4::perspective_lh(70., aspect_ratio, 0.1, 1000.);
+        let projection = Mat4::perspective_lh(70., aspect_ratio, 0.01, 1000.);
 
         Matrices { view, projection }
     }
