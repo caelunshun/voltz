@@ -208,6 +208,7 @@ dependencies = [
  "hecs",
  "image",
  "log",
+ "physics",
  "protocol",
  "rand",
  "rand_pcg",
@@ -1165,6 +1166,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d95a7db200b97ef370c8e6de0088252f7e0dfff7d047a28528e47456c0fc98b6"
 dependencies = [
  "proc-macro-hack",
+]
+
+[[package]]
+name = "physics"
+version = "0.1.0"
+dependencies = [
+ "common",
+ "glam",
 ]
 
 [[package]]

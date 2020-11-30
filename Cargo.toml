@@ -4,6 +4,7 @@ members = [
     "crates/common",
     "crates/common/block-macros",
     "crates/worldgen",
+    "crates/physics",
     "crates/protocol",
     "crates/server",
     "crates/client",

@@ -2,6 +2,7 @@
 
 use crate::{chunk::CHUNK_DIM, BlockId, Chunk, ChunkPos};
 use ahash::AHashMap;
+use glam::Vec3A;
 use uuid::Uuid;
 
 /// Position of a block within a zone. Measured in blocks.
@@ -28,6 +29,15 @@ impl BlockPos {
             self.y.rem_euclid(CHUNK_DIM as i32) as usize,
             self.z.rem_euclid(CHUNK_DIM as i32) as usize,
         )
+    }
+
+    /// Determines the block containing the given position.
+    pub fn from_pos(pos: Vec3A) -> Self {
+        Self {
+            x: pos.x.floor() as i32,
+            y: pos.y.floor() as i32,
+            z: pos.z.floor() as i32,
+        }
     }
 }
 

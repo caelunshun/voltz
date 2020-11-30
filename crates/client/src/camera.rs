@@ -1,12 +1,17 @@
 use crate::game::Game;
 use bytemuck::{Pod, Zeroable};
-use common::{Orient, Pos};
+use common::{blocks, BlockId, Orient, Pos};
 use glam::{Mat4, Vec2, Vec3, Vec3A};
+use physics::collision::Aabb;
 use sdl2::keyboard::{KeyboardState, Scancode};
 
 const MOUSE_SENSITIVITY: f32 = 4.;
 const KEYBOARD_SENSITIVITY: f32 = 0.2;
-const EYE_HEIGHT: f32 = 5.;
+const EYE_HEIGHT: f32 = 1.6;
+const PLAYER_BBOX: Aabb = Aabb {
+    min: Vec3A::zero(),
+    max: glam::const_vec3a!([1., 2., 1.]),
+};
 
 #[derive(Copy, Clone, Zeroable, Pod)]
 #[repr(C)]
@@ -31,23 +36,31 @@ impl CameraController {
 
     /// Called each frame to update position based on keyboard actions.
     pub fn tick_keyboard(&mut self, game: &mut Game, keyboard: KeyboardState) {
-        let mut pos = game.player_ref().get_mut::<Pos>().unwrap();
         let orient = game.player_ref().get::<Orient>().unwrap().0;
         let forward = Vec3A::from(self.direction(orient));
         let right = Vec3A::from(forward.cross(Vec3A::unit_y()));
 
+        let mut vel = Vec3A::zero();
         if keyboard.is_scancode_pressed(Scancode::W) {
-            pos.0 += KEYBOARD_SENSITIVITY * forward;
+            vel += KEYBOARD_SENSITIVITY * forward;
         }
         if keyboard.is_scancode_pressed(Scancode::S) {
-            pos.0 -= KEYBOARD_SENSITIVITY * forward;
+            vel -= KEYBOARD_SENSITIVITY * forward;
         }
         if keyboard.is_scancode_pressed(Scancode::A) {
-            pos.0 += KEYBOARD_SENSITIVITY * right;
+            vel += KEYBOARD_SENSITIVITY * right;
         }
         if keyboard.is_scancode_pressed(Scancode::D) {
-            pos.0 -= KEYBOARD_SENSITIVITY * right;
+            vel -= KEYBOARD_SENSITIVITY * right;
         }
+
+        let old_pos = game.player_ref().get::<Pos>().unwrap().0;
+        let new_pos = old_pos + vel;
+        let new_pos =
+            physics::collision::resolve_collisions(PLAYER_BBOX, old_pos, new_pos, |pos| {
+                game.main_zone().block(pos) != Some(BlockId::new(blocks::Air))
+            });
+        game.player_ref().get_mut::<Pos>().unwrap().0 = new_pos;
     }
 
     /// Returns the view-projection matrix that should be passed to shaders.
