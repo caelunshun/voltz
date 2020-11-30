@@ -10,7 +10,7 @@ const KEYBOARD_SENSITIVITY: f32 = 0.2;
 const EYE_HEIGHT: f32 = 1.6;
 const PLAYER_BBOX: Aabb = Aabb {
     min: Vec3A::zero(),
-    max: glam::const_vec3a!([1., 2., 1.]),
+    max: glam::const_vec3a!([0.5, 2., 0.5]),
 };
 
 #[derive(Copy, Clone, Zeroable, Pod)]

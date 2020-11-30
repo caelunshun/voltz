@@ -25,6 +25,18 @@ impl Aabb {
         (self.max.z - self.min.z) / 2.
     }
 
+    /// Iterates over the block positions intersecting this AABB.
+    pub fn blocks(self) -> impl Iterator<Item = BlockPos> {
+        (self.min.x.floor() as i32..self.max.x.ceil() as i32)
+            .flat_map(move |x| {
+                (self.min.y.floor() as i32..self.max.y.ceil() as i32).map(move |y| (x, y))
+            })
+            .flat_map(move |(x, y)| {
+                (self.min.z.floor() as i32..self.max.z.ceil() as i32).map(move |z| (x, y, z))
+            })
+            .map(|(x, y, z)| BlockPos { x, y, z })
+    }
+
     pub fn corners(self) -> [Vec3A; 8] {
         let dist = self.max - self.min;
         let bottom = [
@@ -350,9 +362,21 @@ pub fn resolve_collisions(
     mut is_solid: impl FnMut(BlockPos) -> bool,
 ) -> Vec3A {
     let mut pos = end;
-    let bottom = BlockPos::from_pos(end);
-    if is_solid(bottom) {
-        pos.y = pos.y.ceil();
+    let vel = end - start;
+
+    let moved_down = bounds + start + vec3a(0., vel.y, 0.);
+    if moved_down.blocks().any(|pos| is_solid(pos)) {
+        pos.y = start.y;
+    }
+
+    let moved_forward = bounds + start + vec3a(0., 0., vel.z);
+    if moved_forward.blocks().any(|pos| is_solid(pos)) {
+        pos.z = start.z;
+    }
+
+    let moved_right = bounds + start + vec3a(vel.x, 0., 0.);
+    if moved_right.blocks().any(|pos| is_solid(pos)) {
+        pos.x = start.x;
     }
 
     pos
