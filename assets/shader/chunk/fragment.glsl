@@ -13,8 +13,8 @@ layout (set = 0, binding = 2) uniform sampler u_block_sampler;
 const vec4 fog_color = vec4(0.6, 0.7, 0.8, 1.0);
 const float fog_density = 0.005;
 
-const vec3 light_dir1 = vec3(1.0, -1.0, 0.3);
-const vec3 light_dir2 = vec3(-0.4, 0.7, -0.8);
+const vec3 light_dir1 = vec3(1.0, 1.0, 0.3);
+const vec3 light_dir2 = vec3(-0.4, -0.7, -0.8);
 const vec3 light_color = vec3(1.0, 0.8, 0.5);
 
 void main() {
@@ -22,7 +22,7 @@ void main() {
     float ambient = 0.3;
     vec3 normal = normalize(v_normal);
     float diff = max(dot(normal, light_dir1), 0.0) + max(dot(normal, light_dir2), 0.0) * 0.4;
-    vec4 shaded = vec4(min((ambient + diff), 1.0) * light_color, 1.0);
+    vec4 shaded = vec4((ambient + diff) * light_color, 1.0);
 
     // Compute fog
     float fog_depth = length(v_view_pos);
