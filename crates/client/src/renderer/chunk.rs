@@ -167,7 +167,7 @@ impl ChunkRenderer {
                     vertex_buffers: &[wgpu::VertexBufferDescriptor {
                         stride: size_of::<RawVertex>() as _,
                         step_mode: wgpu::InputStepMode::Vertex,
-                        attributes: &wgpu::vertex_attr_array![0 => Float3, 1 => Float3],
+                        attributes: &wgpu::vertex_attr_array![0 => Float3, 1 => Float3, 2 => Float3],
                     }],
                 },
                 sample_count: SAMPLE_COUNT,

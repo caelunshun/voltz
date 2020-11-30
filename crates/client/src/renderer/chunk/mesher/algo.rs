@@ -34,24 +34,28 @@ impl Mesh<'_> {
         let x1y1z1 = offset + size * glam::vec3(1., 1., 1.);
         let x0y1z1 = offset + size * glam::vec3(0., 1., 1.);
 
-        fn quad(corners: &[Vec3; 4], size: Vec2, texture: f32) -> [RawVertex; 4] {
+        fn quad(corners: &[Vec3; 4], size: Vec2, normal: Vec3, texture: f32) -> [RawVertex; 4] {
             let size = glam::vec3(size.x, size.y, 1.);
             [
                 RawVertex {
                     pos: corners[0],
                     texcoord: glam::vec3(0., 0., texture) * size,
+                    normal,
                 },
                 RawVertex {
                     pos: corners[1],
                     texcoord: glam::vec3(1., 0., texture) * size,
+                    normal,
                 },
                 RawVertex {
                     pos: corners[2],
                     texcoord: glam::vec3(1., 1., texture) * size,
+                    normal,
                 },
                 RawVertex {
                     pos: corners[3],
                     texcoord: glam::vec3(0., 1., texture) * size,
+                    normal,
                 },
             ]
         }
@@ -61,36 +65,42 @@ impl Mesh<'_> {
             quad(
                 &[x0y0z0, x1y0z0, x1y0z1, x0y0z1],
                 size.xz(),
+                -Vec3::unit_y(),
                 textures[1] as f32,
             ),
             // Top
             quad(
                 &[x0y1z0, x1y1z0, x1y1z1, x0y1z1],
                 size.xz(),
+                Vec3::unit_y(),
                 textures[0] as f32,
             ),
             // Negative X
             quad(
                 &[x0y0z0, x0y1z0, x0y1z1, x0y0z1],
                 size.yz(),
+                -Vec3::unit_x(),
                 textures[3] as f32,
             ),
             // Positive X
             quad(
                 &[x1y0z0, x1y1z0, x1y1z1, x1y0z1],
                 size.yz(),
+                Vec3::unit_x(),
                 textures[2] as f32,
             ),
             // Negative Z
             quad(
                 &[x0y0z0, x1y0z0, x1y1z0, x0y1z0],
                 size.xy(),
+                -Vec3::unit_z(),
                 textures[5] as f32,
             ),
             // Positive Z
             quad(
                 &[x0y0z1, x1y0z1, x1y1z1, x0y1z1],
                 size.xy(),
+                Vec3::unit_z(),
                 textures[4] as f32,
             ),
         ];
@@ -138,6 +148,7 @@ fn vec3(in_steps: [u8; 3]) -> Vec3 {
 pub struct RawVertex {
     pub pos: Vec3,
     pub texcoord: Vec3,
+    pub normal: Vec3,
 }
 
 struct State<'a> {
