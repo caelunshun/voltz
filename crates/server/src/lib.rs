@@ -127,6 +127,13 @@ fn generate_world() -> Zone {
                         }
                     }
                 }
+                if y == 3 && rand::random::<f32>() < 0.1 {
+                    for x in (0..CHUNK_DIM).step_by(2) {
+                        for z in 0..CHUNK_DIM {
+                            chunk.set(x, 15, z, BlockId::new(blocks::Dirt));
+                        }
+                    }
+                }
                 builder.add_chunk(ChunkPos { x, y, z }, chunk).unwrap();
             }
         }
