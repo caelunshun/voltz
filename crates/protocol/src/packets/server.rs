@@ -36,6 +36,8 @@ pub struct JoinGame {
     pub pos: Vec3A,
     /// The player's initial orientation.
     pub orient: Vec2,
+    /// The player's initial velocity.
+    pub vel: Vec3A,
 }
 
 /// Loads a chunk on the client.

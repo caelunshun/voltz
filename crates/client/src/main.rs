@@ -7,9 +7,11 @@ use anyhow::{anyhow, bail, Context};
 use asset::{model::YamlModel, shader::SpirvLoader, texture::PngLoader, Assets, YamlLoader};
 use bumpalo::Bump;
 use camera::CameraController;
-use common::{entity::player::PlayerBundle, Orient, Pos, SystemExecutor};
+use common::{entity::Vel, Orient, Pos, SystemExecutor};
 use conn::Connection;
 use game::Game;
+use glam::Vec3A;
+use physics::Aabb;
 use protocol::{
     bridge::{self, ToServer},
     packets::client::ClientInfo,
@@ -24,9 +26,15 @@ use sdl2::{
 use server::Server;
 use simple_logger::SimpleLogger;
 
+const PLAYER_BBOX: Aabb = Aabb {
+    min: Vec3A::zero(),
+    max: glam::const_vec3a!([0.5, 2., 0.5]),
+};
+
 mod asset;
 mod camera;
 mod conn;
+mod entity;
 mod event;
 mod game;
 mod renderer;
@@ -111,9 +119,9 @@ fn main() -> anyhow::Result<()> {
     let camera = CameraController;
 
     let bridge = launch_server()?;
-    let (pos, orient) = log_in(&bridge).context("failed to connect to integrated server")?;
+    let (pos, orient, vel) = log_in(&bridge).context("failed to connect to integrated server")?;
     let conn = Connection::new(bridge.clone());
-    let game = Game::new(bridge, PlayerBundle { pos, orient }, Bump::new());
+    let game = Game::new(bridge, (pos, orient, vel, PLAYER_BBOX), Bump::new());
     let systems = setup();
 
     let client = Client {
@@ -179,7 +187,7 @@ fn launch_server() -> anyhow::Result<Bridge<ToServer>> {
     Ok(client_bridge)
 }
 
-fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<(Pos, Orient)> {
+fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<(Pos, Orient, Vel)> {
     log::info!("Connecting to server");
     bridge.send(ClientPacket::ClientInfo(ClientInfo {
         protocol_version: PROTOCOL_VERSION,
@@ -206,12 +214,17 @@ fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<(Pos, Orient)> {
     };
 
     log::info!("Received JoinGame: {:?}", join_game);
-    Ok((Pos(join_game.pos), Orient(join_game.orient)))
+    Ok((
+        Pos(join_game.pos),
+        Orient(join_game.orient),
+        Vel(join_game.vel),
+    ))
 }
 
 fn setup() -> SystemExecutor<Game> {
     let mut systems = SystemExecutor::new();
 
+    entity::setup(&mut systems);
     update_server::setup(&mut systems);
 
     systems

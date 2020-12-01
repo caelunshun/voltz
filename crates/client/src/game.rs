@@ -1,8 +1,8 @@
 use std::cell::{RefCell, RefMut};
 
 use bumpalo::Bump;
-use common::{entity::player::PlayerBundle, event::EventBus, world::SparseZone, World};
-use hecs::{Entity, EntityRef};
+use common::{event::EventBus, world::SparseZone, World};
+use hecs::{DynamicBundle, Entity, EntityRef};
 use protocol::{bridge::ToServer, Bridge};
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
@@ -44,7 +44,11 @@ impl Game {
     /// * The `EntityBuilder` containing the player's components.
     ///   These components should be derived from the login packets sent from the server.
     /// * The bump allocator.
-    pub fn new(bridge: Bridge<ToServer>, player_components: PlayerBundle, bump: Bump) -> Self {
+    pub fn new(
+        bridge: Bridge<ToServer>,
+        player_components: impl DynamicBundle,
+        bump: Bump,
+    ) -> Self {
         let mut ecs = hecs::World::new();
         let player = ecs.spawn(player_components);
 

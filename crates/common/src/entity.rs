@@ -14,7 +14,9 @@ pub struct BaseBundle {
     pub orient: Orient,
 }
 
-/// The position of an entity. _Mandatory_ for all non-block entities.
+/// The position of an entity. This is
+/// the center of the bottom of its bounding box.
+/// _Mandatory_ for all non-block entities.
 #[derive(Copy, Clone, Debug)]
 pub struct Pos(pub Vec3A);
 
@@ -25,3 +27,8 @@ pub struct Pos(pub Vec3A);
 /// Both are measured in radians.
 #[derive(Default, Copy, Clone, Debug)]
 pub struct Orient(pub Vec2);
+
+/// The velocity of an entity, measured in blocks
+/// per tick.
+#[derive(Default, Copy, Clone, Debug)]
+pub struct Vel(pub Vec3A);

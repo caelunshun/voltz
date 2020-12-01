@@ -59,10 +59,11 @@ impl Connection {
 
                     let pos = glam::vec3a(0., 66., 0.);
                     let orient = glam::vec2(0., 0.);
-                    let join_game = JoinGame { pos, orient };
+                    let vel = Vec3A::zero();
+                    let join_game = JoinGame { pos, orient, vel };
                     self.bridge.send(ServerPacket::JoinGame(join_game));
 
-                    self.spawn_player(game, pos, orient, client_info);
+                    self.spawn_player(game, pos, orient, vel, client_info);
                 }
                 _ => {
                     log::debug!(
@@ -76,7 +77,14 @@ impl Connection {
         }
     }
 
-    fn spawn_player(&mut self, game: &mut Game, pos: Vec3A, orient: Vec2, client_info: ClientInfo) {
+    fn spawn_player(
+        &mut self,
+        game: &mut Game,
+        pos: Vec3A,
+        orient: Vec2,
+        vel: Vec3A,
+        client_info: ClientInfo,
+    ) {
         log::info!("{} joined the game.", client_info.username);
         let pos = Pos(pos);
         let orient = Orient(orient);
@@ -84,6 +92,7 @@ impl Connection {
         let player = game.ecs_mut().spawn((
             pos,
             orient,
+            vel,
             Username(client_info.username),
             self.bridge.clone(),
             View::new(ChunkPos::from_pos(pos), VIEW_DISTANCE),

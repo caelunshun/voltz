@@ -1,17 +1,15 @@
-use crate::game::Game;
+use crate::{game::Game, PLAYER_BBOX};
 use bytemuck::{Pod, Zeroable};
-use common::{blocks, BlockId, Orient, Pos};
+use common::{blocks, entity::Vel, BlockId, Orient, Pos};
 use glam::{Mat4, Vec2, Vec3, Vec3A};
-use physics::collision::Aabb;
 use sdl2::keyboard::{KeyboardState, Scancode};
 
 const MOUSE_SENSITIVITY: f32 = 4.;
 const KEYBOARD_SENSITIVITY: f32 = 0.2;
 const EYE_HEIGHT: f32 = 1.6;
-const PLAYER_BBOX: Aabb = Aabb {
-    min: Vec3A::zero(),
-    max: glam::const_vec3a!([0.5, 2., 0.5]),
-};
+
+const JUMP_VEL_Y: f32 = 1.0;
+const JUMP_VEL_FORWARD: f32 = 0.5;
 
 #[derive(Copy, Clone, Zeroable, Pod)]
 #[repr(C)]
@@ -36,6 +34,11 @@ impl CameraController {
 
     /// Called each frame to update position based on keyboard actions.
     pub fn tick_keyboard(&mut self, game: &mut Game, keyboard: KeyboardState) {
+        self.tick_move(game, &keyboard);
+        self.tick_jump(game, &keyboard);
+    }
+
+    fn tick_move(&mut self, game: &mut Game, keyboard: &KeyboardState) {
         let orient = game.player_ref().get::<Orient>().unwrap().0;
         let forward = Vec3A::from(self.direction(orient));
         let right = Vec3A::from(forward.cross(Vec3A::unit_y()));
@@ -61,6 +64,22 @@ impl CameraController {
                 game.main_zone().block(pos) != Some(BlockId::new(blocks::Air))
             });
         game.player_ref().get_mut::<Pos>().unwrap().0 = new_pos;
+    }
+
+    fn tick_jump(&mut self, game: &mut Game, keyboard: &KeyboardState) {
+        if keyboard.is_scancode_pressed(Scancode::Space)
+            && physics::is_on_ground(game.player_ref().get::<Pos>().unwrap().0, |pos| {
+                game.main_zone().block(pos) != Some(BlockId::new(blocks::Air))
+            })
+        {
+            let orient = game.player_ref().get::<Orient>().unwrap().0;
+            let direction = self.direction(orient);
+
+            let vel = glam::vec3a(0., JUMP_VEL_Y, 0.)
+                + glam::vec3a(direction.x, 0., direction.z) * JUMP_VEL_FORWARD;
+            game.player_ref().get_mut::<Vel>().unwrap().0 = vel;
+            log::debug!("Jumped - applying velocity {:?}", vel);
+        }
     }
 
     /// Returns the view-projection matrix that should be passed to shaders.

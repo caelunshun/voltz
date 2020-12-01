@@ -371,7 +371,7 @@ pub fn resolve_collisions(
 
     let moved_down = bounds + start + vec3a(0., vel.y, 0.);
     if moved_down.blocks().any(|pos| is_solid(pos)) {
-        pos.y = start.y;
+        pos.y = start.y.floor();
     }
 
     let moved_forward = bounds + start + vec3a(0., 0., vel.z);
