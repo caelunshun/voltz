@@ -1934,10 +1934,12 @@ dependencies = [
 name = "worldgen"
 version = "0.1.0"
 dependencies = [
+ "bumpalo 3.4.0",
  "common",
  "packed_simd_2",
  "rayon",
  "simdnoise",
+ "utils",
 ]
 
 [[package]]

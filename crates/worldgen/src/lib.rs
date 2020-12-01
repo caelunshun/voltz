@@ -18,15 +18,19 @@
 use common::Zone;
 
 mod biomes;
+mod density;
+mod trilerp;
 
 /// The Y coordinate of sea level.
-pub const SEA_LEVEL: usize = 100;
+pub const SEA_LEVEL: usize = 64;
 
 /// Settings used for world generation. The same settings
 /// will always produce the same generated blocks.
 #[derive(Debug)]
 pub struct Settings {
     /// The seed used to initialize the RNG, noise functions, etc.
+    /// Different parts of the world generation pipeline need
+    /// to add different offsets to this seed.
     pub seed: u64,
 }
 
@@ -41,4 +45,4 @@ pub struct Settings {
 /// This is an expensive function and should not be used on the main thread.
 ///
 /// This function uses `rayon` to parallelize generation.
-pub fn generate_into(zone: &mut Zone, settings: Settings) {}
+pub fn generate(zone: &mut Zone, settings: Settings) {}

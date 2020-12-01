@@ -6,6 +6,9 @@ edition = "2018"
 
 [dependencies]
 common = { path = "../common" }
+utils = { path = "../utils" }
+
+bumpalo = { path = "../../../bumpalo" }
 rayon = "1"
 simdnoise = { git = "https://github.com/jackmott/rust-simd-noise" }
 simd = { package = "packed_simd_2", version = "0.3" }
