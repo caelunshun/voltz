@@ -39,8 +39,8 @@ impl CameraController {
 
     fn tick_move(&mut self, game: &mut Game, keyboard: &KeyboardState) {
         let orient = game.player_ref().get::<Orient>().unwrap().0;
-        let forward = Vec3A::from(self.direction(orient)).normalize();
-        let right = Vec3A::from(forward.cross(Vec3A::unit_y()));
+        let forward = Vec3A::from(self.direction(orient));
+        let right = Vec3A::from(forward.cross(Vec3A::unit_y())).normalize();
 
         let mut vel = Vec3A::zero();
         if keyboard.is_scancode_pressed(Scancode::W) {
