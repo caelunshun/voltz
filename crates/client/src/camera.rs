@@ -5,11 +5,10 @@ use glam::{Mat4, Vec2, Vec3, Vec3A};
 use sdl2::keyboard::{KeyboardState, Scancode};
 
 const MOUSE_SENSITIVITY: f32 = 4.;
-const KEYBOARD_SENSITIVITY: f32 = 0.2;
+const KEYBOARD_SENSITIVITY: f32 = 6.;
 const EYE_HEIGHT: f32 = 1.6;
 
-const JUMP_VEL_Y: f32 = 1.0;
-const JUMP_VEL_FORWARD: f32 = 0.5;
+const JUMP_VEL_Y: f32 = 6.;
 
 #[derive(Copy, Clone, Zeroable, Pod)]
 #[repr(C)]
@@ -40,7 +39,7 @@ impl CameraController {
 
     fn tick_move(&mut self, game: &mut Game, keyboard: &KeyboardState) {
         let orient = game.player_ref().get::<Orient>().unwrap().0;
-        let forward = Vec3A::from(self.direction(orient));
+        let forward = Vec3A::from(self.direction(orient)).normalize();
         let right = Vec3A::from(forward.cross(Vec3A::unit_y()));
 
         let mut vel = Vec3A::zero();
@@ -57,6 +56,9 @@ impl CameraController {
             vel -= KEYBOARD_SENSITIVITY * right;
         }
 
+        vel.y = 0.;
+        vel *= game.dt();
+
         let old_pos = game.player_ref().get::<Pos>().unwrap().0;
         let new_pos = old_pos + vel;
         let new_pos =
@@ -72,13 +74,9 @@ impl CameraController {
                 game.main_zone().block(pos) != Some(BlockId::new(blocks::Air))
             })
         {
-            let orient = game.player_ref().get::<Orient>().unwrap().0;
-            let direction = self.direction(orient);
-
-            let vel = glam::vec3a(0., JUMP_VEL_Y, 0.)
-                + glam::vec3a(direction.x, 0., direction.z) * JUMP_VEL_FORWARD;
+            let vel = glam::vec3a(0., JUMP_VEL_Y, 0.);
             game.player_ref().get_mut::<Vel>().unwrap().0 = vel;
-            log::debug!("Jumped - applying velocity {:?}", vel);
+            log::trace!("Jumped - applying velocity {:?}", vel);
         }
     }
 

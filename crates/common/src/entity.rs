@@ -29,6 +29,6 @@ pub struct Pos(pub Vec3A);
 pub struct Orient(pub Vec2);
 
 /// The velocity of an entity, measured in blocks
-/// per tick.
+/// per second.
 #[derive(Default, Copy, Clone, Debug)]
 pub struct Vel(pub Vec3A);

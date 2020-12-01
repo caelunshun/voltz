@@ -36,6 +36,9 @@ pub struct Game {
 
     /// Connection with the server.
     bridge: Bridge<ToServer>,
+
+    /// Time in seconds since the previous frame.
+    dt: f32,
 }
 
 impl Game {
@@ -67,6 +70,7 @@ impl Game {
             bump,
             rng,
             bridge,
+            dt: 0.,
         }
     }
 
@@ -134,5 +138,14 @@ impl Game {
     /// Gets the bridge for sending packets to the server.
     pub fn bridge(&self) -> &Bridge<ToServer> {
         &self.bridge
+    }
+
+    /// Gets the number of seconds since the previous frame.
+    pub fn dt(&self) -> f32 {
+        self.dt
+    }
+
+    pub fn set_dt(&mut self, dt: f32) {
+        self.dt = dt;
     }
 }

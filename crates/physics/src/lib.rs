@@ -11,25 +11,26 @@ pub fn do_tick(
     bounds: Aabb,
     pos: &mut Vec3A,
     vel: &mut Vec3A,
+    dt: f32,
     mut is_solid: impl FnMut(BlockPos) -> bool,
 ) {
-    let drag_factor = 0.98;
-    *vel *= drag_factor;
+    let drag_factor = 0.6676f32;
+    *vel *= drag_factor.powf(dt);
 
-    let new_pos = *pos + *vel;
+    let new_pos = *pos + *vel * dt;
     let new_pos = collision::resolve_collisions(bounds, *pos, new_pos, &mut is_solid);
     *pos = new_pos;
 
     let on_ground = is_on_ground(*pos, &mut is_solid);
 
-    let gravity = -0.04;
+    let gravity = -24.0f32;
     if !on_ground {
-        vel.y += gravity;
+        vel.y += gravity * dt;
     }
 
-    let friction_factor = 0.6;
+    let friction_factor = 0.05f32;
     if on_ground {
-        *vel *= friction_factor;
+        *vel *= friction_factor.powf(dt);
     }
 }
 

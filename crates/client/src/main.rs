@@ -1,7 +1,7 @@
 #![feature(type_name_of_val, allocator_api)]
 #![allow(dead_code)]
 
-use std::thread;
+use std::{thread, time::Instant};
 
 use anyhow::{anyhow, bail, Context};
 use asset::{model::YamlModel, shader::SpirvLoader, texture::PngLoader, Assets, YamlLoader};
@@ -61,9 +61,12 @@ pub struct Client {
 impl Client {
     pub fn run(mut self) -> anyhow::Result<()> {
         while self.open {
+            let start = Instant::now();
             self.sdl.mouse().set_relative_mouse_mode(true);
             self.handle_events();
             self.tick();
+            let elapsed = start.elapsed();
+            self.game.set_dt(elapsed.as_secs_f32());
         }
         Ok(())
     }
