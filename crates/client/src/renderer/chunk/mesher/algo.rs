@@ -78,14 +78,14 @@ impl Mesh<'_> {
             // Negative X
             quad(
                 &[x0y0z0, x0y0z1, x0y1z1, x0y1z0],
-                size.yz(),
+                size.zy(),
                 -Vec3::unit_x(),
                 textures[3] as f32,
             ),
             // Positive X
             quad(
                 &[x1y0z0, x1y0z1, x1y1z1, x1y1z0],
-                size.yz(),
+                size.zy(),
                 Vec3::unit_x(),
                 textures[2] as f32,
             ),
