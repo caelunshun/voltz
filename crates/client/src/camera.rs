@@ -8,7 +8,7 @@ const MOUSE_SENSITIVITY: f32 = 4.;
 const KEYBOARD_SENSITIVITY: f32 = 6.;
 const EYE_HEIGHT: f32 = 1.6;
 
-const JUMP_VEL_Y: f32 = 7.;
+const JUMP_VEL_Y: f32 = 8.;
 
 #[derive(Copy, Clone, Zeroable, Pod)]
 #[repr(C)]

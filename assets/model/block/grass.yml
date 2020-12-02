@@ -2,4 +2,5 @@ inherits: cube
 
 textures:
   top: grass/top.png
-  all: dirt.png
+  sides: grass/side.png
+  bottom: dirt.png

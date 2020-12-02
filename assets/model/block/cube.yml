@@ -3,18 +3,20 @@ texture_params:
   # texture applied to all faces (can be overriden)
   all:
     default: null
+  sides:
+    default: all
   top:
     default: all
   bottom:
     default: all
   posx:
-    default: all
+    default: sides
   negx:
-    default: all
+    default: sides
   posz:
-    default: all
+    default: sides
   negz:
-    default: all
+    default: sides
 
 prisms:
   - faces:
