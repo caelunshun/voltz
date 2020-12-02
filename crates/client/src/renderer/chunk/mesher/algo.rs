@@ -39,22 +39,22 @@ impl Mesh<'_> {
             [
                 RawVertex {
                     pos: corners[0],
-                    texcoord: glam::vec3(0., 0., texture) * size,
+                    texcoord: glam::vec3(0., 1., texture) * size,
                     normal,
                 },
                 RawVertex {
                     pos: corners[1],
-                    texcoord: glam::vec3(1., 0., texture) * size,
-                    normal,
-                },
-                RawVertex {
-                    pos: corners[2],
                     texcoord: glam::vec3(1., 1., texture) * size,
                     normal,
                 },
                 RawVertex {
+                    pos: corners[2],
+                    texcoord: glam::vec3(1., 0., texture) * size,
+                    normal,
+                },
+                RawVertex {
                     pos: corners[3],
-                    texcoord: glam::vec3(0., 1., texture) * size,
+                    texcoord: glam::vec3(0., 0., texture) * size,
                     normal,
                 },
             ]
@@ -77,14 +77,14 @@ impl Mesh<'_> {
             ),
             // Negative X
             quad(
-                &[x0y0z0, x0y1z0, x0y1z1, x0y0z1],
+                &[x0y0z0, x0y0z1, x0y1z1, x0y1z0],
                 size.yz(),
                 -Vec3::unit_x(),
                 textures[3] as f32,
             ),
             // Positive X
             quad(
-                &[x1y0z0, x1y1z0, x1y1z1, x1y0z1],
+                &[x1y0z0, x1y0z1, x1y1z1, x1y1z0],
                 size.yz(),
                 Vec3::unit_x(),
                 textures[2] as f32,
