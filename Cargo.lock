@@ -277,6 +277,7 @@ dependencies = [
  "hecs",
  "log",
  "once_cell",
+ "rayon",
  "serde",
  "thiserror",
  "utils",
@@ -1490,6 +1491,7 @@ dependencies = [
  "rand",
  "rand_pcg",
  "rayon",
+ "worldgen",
 ]
 
 [[package]]

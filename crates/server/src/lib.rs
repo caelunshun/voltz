@@ -5,9 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use common::{
-    blocks, chunk::CHUNK_DIM, world::ZoneBuilder, BlockId, Chunk, ChunkPos, SystemExecutor, Zone,
-};
+use common::{world::ZoneBuilder, Chunk, ChunkPos, SystemExecutor, Zone};
 pub use conn::Connection;
 use game::Game;
 use panic::AssertUnwindSafe;
@@ -115,31 +113,15 @@ fn generate_world() -> Zone {
     for x in -WORLD_SIZE..=WORLD_SIZE {
         for y in 0..16 {
             for z in -WORLD_SIZE..=WORLD_SIZE {
-                let mut chunk = Chunk::new();
-                if y < 4 {
-                    chunk.fill(BlockId::new(blocks::Stone));
-                } else if y == 4 && x.abs() <= 4 && z.abs() <= 4 {
-                    for x in (0..CHUNK_DIM).step_by(4) {
-                        for z in (0..CHUNK_DIM).step_by(4) {
-                            for y in 0..2 {
-                                chunk.set(x, y, z, BlockId::new(blocks::Melium));
-                            }
-                        }
-                    }
-                }
-                if y == 3 && rand::random::<f32>() < 0.1 {
-                    for x in (0..CHUNK_DIM).step_by(2) {
-                        for z in 0..CHUNK_DIM {
-                            chunk.set(x, 15, z, BlockId::new(blocks::Dirt));
-                        }
-                    }
-                }
+                let chunk = Chunk::new();
                 builder.add_chunk(ChunkPos { x, y, z }, chunk).unwrap();
             }
         }
     }
 
-    builder.build().ok().expect("failed to generate all chunks")
+    let mut zone = builder.build().ok().expect("failed to generate all chunks");
+    worldgen::generate(&mut zone, worldgen::Settings { seed: 10 });
+    zone
 }
 
 fn setup() -> SystemExecutor<Game> {

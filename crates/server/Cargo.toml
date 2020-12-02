@@ -15,6 +15,7 @@ path = "src/main.rs"
 [dependencies]
 common = { path = "../common" }
 protocol = { path = "../protocol" }
+worldgen = { path = "../worldgen" }
 hecs = "0.3"
 
 anyhow = "1"

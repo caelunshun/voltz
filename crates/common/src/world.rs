@@ -3,6 +3,7 @@
 use crate::{chunk::CHUNK_DIM, BlockId, Chunk, ChunkPos};
 use ahash::AHashMap;
 use glam::Vec3A;
+use rayon::prelude::*;
 use uuid::Uuid;
 
 /// Position of a block within a zone. Measured in blocks.
@@ -112,12 +113,57 @@ impl Zone {
         (self.max.z - self.min.z + 1) as usize
     }
 
+    pub fn dim(&self) -> (usize, usize, usize) {
+        (self.x_dim(), self.y_dim(), self.z_dim())
+    }
+
     pub fn min(&self) -> ChunkPos {
         self.min
     }
 
     pub fn max(&self) -> ChunkPos {
         self.max
+    }
+
+    /// Returns an iterator over the chunks in this zone, yielded
+    /// in arbitrary order.
+    pub fn chunks<'a>(&'a self) -> impl Iterator<Item = (ChunkPos, &'a Chunk)> + 'a {
+        self.chunks.iter().enumerate().map(move |(i, chunk)| {
+            let pos = reverse_chunk_index(self.min, self.dim(), i);
+            (pos, chunk)
+        })
+    }
+
+    pub fn chunks_mut<'a>(&'a mut self) -> impl Iterator<Item = (ChunkPos, &'a mut Chunk)> + 'a {
+        let min = self.min;
+        let dim = self.dim();
+        self.chunks.iter_mut().enumerate().map(move |(i, chunk)| {
+            let pos = reverse_chunk_index(min, dim, i);
+            (pos, chunk)
+        })
+    }
+
+    pub fn par_chunks<'a>(
+        &'a self,
+    ) -> impl IndexedParallelIterator<Item = (ChunkPos, &'a Chunk)> + 'a {
+        self.chunks.par_iter().enumerate().map(move |(i, chunk)| {
+            let pos = reverse_chunk_index(self.min, self.dim(), i);
+            (pos, chunk)
+        })
+    }
+
+    pub fn par_chunks_mut<'a>(
+        &'a mut self,
+    ) -> impl IndexedParallelIterator<Item = (ChunkPos, &'a mut Chunk)> + 'a {
+        let min = self.min;
+        let dim = self.dim();
+        self.chunks
+            .par_iter_mut()
+            .enumerate()
+            .map(move |(i, chunk)| {
+                let pos = reverse_chunk_index(min, dim, i);
+                (pos, chunk)
+            })
     }
 
     fn chunk_index(&self, pos: ChunkPos) -> Option<usize> {
@@ -136,6 +182,18 @@ impl Zone {
 
             Some((xdiff * self.y_dim() * self.z_dim()) + (ydiff * self.z_dim()) + zdiff)
         }
+    }
+}
+
+fn reverse_chunk_index(min: ChunkPos, dim: (usize, usize, usize), index: usize) -> ChunkPos {
+    let (_x_dim, y_dim, z_dim) = dim;
+    let x = index / (y_dim * z_dim);
+    let y = (index - (x * y_dim * z_dim)) / z_dim;
+    let z = index % z_dim;
+    ChunkPos {
+        x: x as i32 + min.x,
+        y: y as i32 + min.y,
+        z: z as i32 + min.z,
     }
 }
 
