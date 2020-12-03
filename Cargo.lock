@@ -203,7 +203,7 @@ dependencies = [
  "crossbeam-queue",
  "fontdue",
  "futures-executor",
- "glam",
+ "glam 0.11.0",
  "guillotiere",
  "hecs",
  "image",
@@ -218,6 +218,7 @@ dependencies = [
  "serde_yaml",
  "server",
  "simple_logger",
+ "splines",
  "thiserror",
  "tiny-skia",
  "utils",
@@ -273,7 +274,7 @@ dependencies = [
  "ahash 0.6.1",
  "anyhow",
  "block-macros",
- "glam",
+ "glam 0.11.0",
  "hecs",
  "log",
  "once_cell",
@@ -791,6 +792,15 @@ dependencies = [
 
 [[package]]
 name = "glam"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "579160312273c954cc51bd440f059dde741029ac8daf8c84fece76cb77f62c15"
+dependencies = [
+ "version_check",
+]
+
+[[package]]
+name = "glam"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5a647a31acdc1d622b47ad052dd3cdf435046e09183a00aef0368943a70eee3"
@@ -1174,7 +1184,7 @@ name = "physics"
 version = "0.1.0"
 dependencies = [
  "common",
- "glam",
+ "glam 0.11.0",
 ]
 
 [[package]]
@@ -1286,7 +1296,7 @@ dependencies = [
  "common",
  "derivative",
  "flume",
- "glam",
+ "glam 0.11.0",
  "log",
  "serde",
 ]
@@ -1483,7 +1493,7 @@ dependencies = [
  "anyhow",
  "bumpalo 3.4.0",
  "common",
- "glam",
+ "glam 0.11.0",
  "hashbrown 0.9.1 (git+https://github.com/rust-lang/hashbrown)",
  "hecs",
  "log",
@@ -1574,12 +1584,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "splines"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b8110d8b72b411d421e8517dd5544ad160d7987586ad4e3c8f2bbceb5e82eaa"
+dependencies = [
+ "glam 0.10.2",
+]
+
+[[package]]
 name = "storage-map"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "418bb14643aa55a7841d5303f72cf512cfb323b8cc221d51580500a1ca75206c"
 dependencies = [
  "lock_api",
+]
+
+[[package]]
+name = "stretch"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b0dc6d20ce137f302edf90f9cd3d278866fd7fb139efca6f246161222ad6d87"
+dependencies = [
+ "lazy_static",
+ "libm",
 ]
 
 [[package]]
@@ -1698,6 +1727,7 @@ name = "utils"
 version = "0.1.0"
 dependencies = [
  "bumpalo 3.4.0",
+ "glam 0.11.0",
  "rand",
  "rand_pcg",
  "serde",
@@ -1723,6 +1753,18 @@ name = "version_check"
 version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5a972e5669d67ba988ce3dc826706fb0a8b01471c088cb0b6110b805cc36aed"
+
+[[package]]
+name = "voltzui"
+version = "0.1.0"
+dependencies = [
+ "ahash 0.6.1",
+ "glam 0.11.0",
+ "hecs",
+ "stretch",
+ "tiny-skia",
+ "utils",
+]
 
 [[package]]
 name = "walkdir"

@@ -24,7 +24,7 @@ void main() {
     float diff = max(dot(normal, lightDir1), 0.0) + max(dot(normal, lightDir2), 0.0) * 0.4;
     vec4 shaded = vec4((ambient + diff) * lightColor, 1.0);
 
-    // Compute fog
+    // Fog
     float fogDepth = length(iViewPos);
     #define LOG2 1.442695
     float fogAmount = 1. - exp2(-fogDensity * fogDensity * fogDepth * fogDepth * LOG2);

@@ -3,12 +3,14 @@
 #![feature(allocator_api, slice_fill)]
 
 mod bitset;
+mod geom;
 mod packed_array;
 
+use bumpalo::Bump;
 use std::cell::RefCell;
 
 pub use bitset::BitSet;
-use bumpalo::Bump;
+pub use geom::{Color, Rect};
 pub use packed_array::PackedArray;
 
 thread_local! {

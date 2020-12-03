@@ -1,0 +1,14 @@
+[package]
+name = "voltzui"
+version = "0.1.0"
+authors = ["caelunshun <caelunshun@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+utils = { path = "../utils" }
+hecs = "0.3"
+
+glam = "0.11"
+tiny-skia = { version = "0.2", default-features = false }
+stretch = "0.3"
+ahash = "0.6"

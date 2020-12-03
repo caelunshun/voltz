@@ -7,6 +7,7 @@ edition = "2018"
 [dependencies]
 bumpalo = { path = "../../../bumpalo" }
 serde = { version = "1", features = ["derive"] }
+glam = { version = "0.11", features = ["serde"] }
 
 [dev-dependencies]
 rand = "0.7"
