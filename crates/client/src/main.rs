@@ -119,7 +119,7 @@ fn main() -> anyhow::Result<()> {
     let (sdl, window, event_pump) =
         init_sdl2().map_err(|e| anyhow!("failed to initialize SDL2: {}", e))?;
     let renderer = Renderer::new(&window, &assets).context("failed to intiailize wgpu renderer")?;
-    let camera = CameraController;
+    let camera = CameraController::new();
 
     let bridge = launch_server()?;
     let (pos, orient, vel) = log_in(&bridge).context("failed to connect to integrated server")?;

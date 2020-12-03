@@ -3,6 +3,7 @@ use bytemuck::{Pod, Zeroable};
 use common::{blocks, entity::Vel, BlockId, Orient, Pos};
 use glam::{Mat4, Vec2, Vec3, Vec3A};
 use sdl2::keyboard::{KeyboardState, Scancode};
+use splines::{Interpolation, Key, Spline};
 
 const MOUSE_SENSITIVITY: f32 = 4.;
 const KEYBOARD_SENSITIVITY: f32 = 6.;
@@ -17,9 +18,39 @@ pub struct Matrices {
     pub projection: Mat4,
 }
 
-pub struct CameraController;
+pub struct CameraController {
+    move_spline: Spline<f32, f32>,
+    move_time: Option<f32>,
+    stop_time: f32,
+}
 
 impl CameraController {
+    pub fn new() -> Self {
+        let move_spline = Spline::from_iter(
+            [
+                Key {
+                    t: 0.,
+                    value: 0.,
+                    interpolation: Interpolation::Bezier(0.1),
+                },
+                Key {
+                    t: 0.2,
+                    value: 1.,
+                    interpolation: Interpolation::Bezier(0.8),
+                },
+            ]
+            .iter()
+            .copied(),
+        );
+        let move_time = None;
+
+        Self {
+            move_spline,
+            move_time,
+            stop_time: f32::INFINITY,
+        }
+    }
+
     /// Handles a relative mouse motion event.
     pub fn on_mouse_move(&mut self, game: &mut Game, dx: i32, dy: i32) {
         let dx = dx as f32;
@@ -43,21 +74,54 @@ impl CameraController {
         let right = Vec3A::from(forward.cross(Vec3A::unit_y())).normalize();
 
         let mut vel = Vec3A::zero();
+        let mut moved = false;
         if keyboard.is_scancode_pressed(Scancode::W) {
             vel += KEYBOARD_SENSITIVITY * forward;
+            moved = true;
         }
         if keyboard.is_scancode_pressed(Scancode::S) {
             vel -= KEYBOARD_SENSITIVITY * forward;
+            moved = true;
         }
         if keyboard.is_scancode_pressed(Scancode::A) {
             vel += KEYBOARD_SENSITIVITY * right;
+            moved = true;
         }
         if keyboard.is_scancode_pressed(Scancode::D) {
             vel -= KEYBOARD_SENSITIVITY * right;
+            moved = true;
         }
 
         vel.y = 0.;
         vel *= game.dt();
+
+        let multiplier = if moved {
+            let time = match &mut self.move_time {
+                Some(time) => {
+                    *time += game.dt();
+                    *time
+                }
+                None => {
+                    self.move_time = Some(game.dt());
+                    self.stop_time = 0.;
+                    game.dt()
+                }
+            };
+            self.move_spline.clamped_sample(time).unwrap()
+        } else {
+            self.move_time = None;
+            self.stop_time += game.dt();
+            if let Some(speed) = self
+                .move_spline
+                .sample(self.move_spline.keys().last().unwrap().t - self.stop_time)
+            {
+                vel = forward * speed * KEYBOARD_SENSITIVITY * game.dt();
+                1.
+            } else {
+                0.
+            }
+        };
+        vel *= multiplier;
 
         let old_pos = game.player_ref().get::<Pos>().unwrap().0;
         let new_pos = old_pos + vel;

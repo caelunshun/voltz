@@ -15,6 +15,7 @@ hecs = { version = "0.3", features = ["macros"] }
 
 wgpu = "0.6"
 glam = { version = "0.11", features = ["bytemuck"] }
+splines = { version = "3", features = ["impl-glam"] }
 sdl2 = { version = "0.34", features = ["raw-window-handle"] }
 fontdue = "0.4"
 tiny-skia = "0.2"
