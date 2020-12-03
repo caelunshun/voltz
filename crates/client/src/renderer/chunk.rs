@@ -70,10 +70,7 @@ impl ChunkRenderer {
             mag_filter: wgpu::FilterMode::Nearest,
             min_filter: wgpu::FilterMode::Nearest,
             mipmap_filter: wgpu::FilterMode::Linear,
-            lod_min_clamp: 0.,
-            lod_max_clamp: 100.,
-            compare: None,
-            anisotropy_clamp: None,
+            ..Default::default()
         });
 
         let bg_layout =
@@ -297,6 +294,7 @@ impl ChunkRenderer {
 /// A fixed dimension used for block textures. Block textures
 /// must match this dimension exactly.
 const BLOCK_TEXTURE_DIM: u32 = 64;
+const MIP_LEVELS: u32 = 6;
 
 fn create_block_textures(
     resources: &Arc<Resources>,
@@ -311,7 +309,7 @@ fn create_block_textures(
                 height: BLOCK_TEXTURE_DIM,
                 depth: 1,
             },
-            mip_level_count: 1,
+            mip_level_count: MIP_LEVELS,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
@@ -337,7 +335,7 @@ fn create_block_textures(
         }
 
         let data = texture.data();
-        let index = textures.add(data, resources.queue(), encoder);
+        let index = textures.add_mipmapped(data, resources.queue(), encoder)?;
         indexes.insert(name.to_owned(), index);
 
         log::info!("Uploaded block texture '{}'", name);

@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use crate::renderer::Resources;
 
+use super::TextureScaler;
+
 pub type Index = u32;
 
 /// Maintains a dynamic 2D texture array. Textures can
@@ -53,6 +55,26 @@ impl TextureArray {
         let index = self.allocate_index(encoder);
         self.upload_texture(texture, queue, index);
         index
+    }
+
+    /// Adds a texture to the array, generating mipmaps using a [`TextureScaler`](super::TextureScaler).
+    pub fn add_mipmapped(
+        &mut self,
+        texture: &[u8],
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+    ) -> anyhow::Result<Index> {
+        let index = self.allocate_index(encoder);
+        TextureScaler::new().generate_mipmaps(
+            texture,
+            self.desc.size.width,
+            self.desc.size.height,
+            self.desc.mip_level_count,
+            &self.texture,
+            index,
+            queue,
+        )?;
+        Ok(index)
     }
 
     fn upload_texture(&self, texture: &[u8], queue: &wgpu::Queue, index: Index) {
@@ -110,19 +132,25 @@ impl TextureArray {
         self.set_capacity(new_cap);
 
         let new_texture = self.resources.device().create_texture(&self.desc);
-        encoder.copy_texture_to_texture(
-            wgpu::TextureCopyView {
-                texture: &self.texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-            },
-            wgpu::TextureCopyView {
-                texture: &new_texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-            },
-            old_size,
-        );
+        for mip_level in 0..self.desc.mip_level_count {
+            encoder.copy_texture_to_texture(
+                wgpu::TextureCopyView {
+                    texture: &self.texture,
+                    mip_level,
+                    origin: wgpu::Origin3d::ZERO,
+                },
+                wgpu::TextureCopyView {
+                    texture: &new_texture,
+                    mip_level,
+                    origin: wgpu::Origin3d::ZERO,
+                },
+                wgpu::Extent3d {
+                    width: old_size.width / 2u32.pow(mip_level),
+                    height: old_size.height / 2u32.pow(mip_level),
+                    depth: old_size.depth,
+                },
+            );
+        }
         self.texture = new_texture;
 
         self.free.extend((old_cap..new_cap).rev());
