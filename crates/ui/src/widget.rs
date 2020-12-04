@@ -18,7 +18,7 @@ impl<W> ChangeList<W> {
 pub trait WidgetData {
     type State: WidgetState;
 
-    fn location(&self) -> &'static Location;
+    fn location(&self) -> &'static Location<'static>;
 
     fn into_state(self) -> Self::State;
 

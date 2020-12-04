@@ -10,6 +10,7 @@ use utils::Color;
 use crate::{canvas::Paint, Path, WidgetData, WidgetState};
 
 /// A bare, solid-color rectangle.
+#[derive(Debug)]
 pub struct Rectangle {
     size: Vec2,
     color: Color,
@@ -30,7 +31,7 @@ impl Rectangle {
 impl WidgetData for Rectangle {
     type State = State;
 
-    fn location(&self) -> &'static std::panic::Location {
+    fn location(&self) -> &'static std::panic::Location<'static> {
         self.location
     }
 
@@ -64,6 +65,14 @@ impl WidgetState for State {
             },
             ..Default::default()
         }
+    }
+
+    fn is_leaf(&self) -> bool {
+        true
+    }
+
+    fn compute_size(&self) -> Vec2 {
+        self.size
     }
 
     fn draw(&mut self, bounds: utils::Rect, cv: &mut crate::Canvas) {

@@ -2,7 +2,7 @@ use std::{path::Path, sync::atomic::AtomicU64};
 
 use crate::{Canvas, WidgetData, WidgetState};
 use ahash::AHashMap;
-use glam::vec2;
+use glam::{vec2, Vec2};
 use stretch::{
     geometry::Size,
     node::Node,
@@ -73,7 +73,7 @@ impl Ui {
     pub fn build(&mut self) -> UiBuilder {
         UiBuilder {
             ui: self,
-            current_parent: None,
+            parent_stack: Vec::new(),
         }
     }
 
@@ -84,14 +84,16 @@ impl Ui {
         let Self {
             canvas, stretch, ..
         } = self;
-        self.tree.traverse(|_id, slot| {
-            let layout = stretch.layout(slot.stretch_node).unwrap();
-            let bounds = Rect {
-                pos: vec2(layout.location.x, layout.location.y),
-                size: vec2(layout.size.width, layout.size.height),
-            };
-            slot.node.draw(bounds, canvas);
-        });
+        self.tree
+            .fold_traverse(Vec2::zero(), |parent_pos, _id, slot| {
+                let layout = stretch.layout(slot.stretch_node).unwrap();
+                let bounds = Rect {
+                    pos: vec2(layout.location.x, layout.location.y) + parent_pos,
+                    size: vec2(layout.size.width, layout.size.height),
+                };
+                slot.node.draw(bounds, canvas);
+                parent_pos + bounds.pos
+            });
     }
 
     /// Gets the rendered pixel data as RGBA.
@@ -120,7 +122,7 @@ impl Ui {
             .unwrap();
     }
 
-    fn insert_node(&mut self, parent: Option<NodeId>, node: Box<dyn WidgetState>) {
+    fn insert_node(&mut self, parent: Option<NodeId>, node: Box<dyn WidgetState>) -> NodeId {
         let stretch_node = self.create_stretch_node(&*node);
         let slot = NodeSlot { node, stretch_node };
         let id = NodeId::next();
@@ -138,6 +140,8 @@ impl Ui {
         self.stretch
             .add_child(stretch_parent, stretch_node)
             .unwrap();
+
+        id
     }
 
     fn create_stretch_node(&mut self, node: &dyn WidgetState) -> Node {
@@ -176,7 +180,7 @@ impl Ui {
 /// Builder to add nodes to a UI while diffing.
 pub struct UiBuilder<'a> {
     ui: &'a mut Ui,
-    current_parent: Option<NodeId>,
+    parent_stack: Vec<NodeId>,
 }
 
 impl<'a> UiBuilder<'a> {
@@ -187,7 +191,30 @@ impl<'a> UiBuilder<'a> {
         D::State: WidgetState + 'static,
     {
         let node = data.into_state();
-        self.ui.insert_node(self.current_parent, Box::new(node));
+        self.ui
+            .insert_node(self.parent_stack.last().copied(), Box::new(node));
+        self
+    }
+
+    /// Pushes a new child node to the current parent, and sets
+    /// the current parent as the new node.
+    pub fn begin<D>(&mut self, data: D) -> &mut Self
+    where
+        D: WidgetData,
+        D::State: WidgetState + 'static,
+    {
+        let node = data.into_state();
+        let id = self
+            .ui
+            .insert_node(self.parent_stack.last().copied(), Box::new(node));
+        self.parent_stack.push(id);
+        self
+    }
+
+    /// Ends the current parent and pops it from the parent stack,
+    /// allowing new siblings to be added.
+    pub fn end(&mut self) -> &mut Self {
+        self.parent_stack.pop();
         self
     }
 }
@@ -206,16 +233,22 @@ struct Tree {
 
 impl Tree {
     /// Performs a depth-first traversal of the node tree.
-    pub fn traverse(&mut self, mut callback: impl FnMut(NodeId, &mut NodeSlot)) {
-        let mut stack = self.roots.clone();
-        while let Some(id) = stack.pop() {
+    pub fn fold_traverse<S: Copy>(
+        &mut self,
+        start_state: S,
+        mut callback: impl FnMut(S, NodeId, &mut NodeSlot) -> S,
+    ) {
+        let mut stack: Vec<_> = self.roots.iter().map(|&root| (root, start_state)).collect();
+        while let Some((id, state)) = stack.pop() {
             let slot = self.nodes.get_mut(&id).unwrap();
-            callback(id, slot);
-            stack.extend_from_slice(
+            let new_state = callback(state, id, slot);
+            stack.extend(
                 self.children
                     .get(&id)
                     .map(Vec::as_slice)
-                    .unwrap_or_default(),
+                    .unwrap_or_default()
+                    .iter()
+                    .map(|&child| (child, new_state)),
             );
         }
     }
