@@ -176,6 +176,17 @@ impl Canvas {
         self
     }
 
+    pub fn data(&self) -> &[u8] {
+        self.target.pixmap.data()
+    }
+
+    pub fn save_png(&self, path: &std::path::Path) {
+        self.target
+            .pixmap
+            .save_png(path)
+            .expect("failed to save PNG")
+    }
+
     fn set_scale(&mut self, new_scale: f32) {
         self.scale = new_scale;
         self.apply_scale();

@@ -1759,8 +1759,8 @@ name = "voltzui"
 version = "0.1.0"
 dependencies = [
  "ahash 0.6.1",
+ "fontdue",
  "glam 0.11.0",
- "hecs",
  "stretch",
  "tiny-skia",
  "utils",
