@@ -1,4 +1,12 @@
+use std::{ops::Deref, sync::Arc};
+
+use ahash::AHashMap;
+use fontdue::{
+    layout::{GlyphRasterConfig, Layout, LayoutSettings, TextStyle, WrapStyle},
+    Font,
+};
 use glam::Vec2;
+use tiny_skia::{ColorU8, Pixmap, PixmapPaint};
 use utils::{Color, Rect};
 
 #[doc(inline)]
@@ -126,15 +134,58 @@ impl Stroke {
     }
 }
 
+pub use fontdue::layout::{HorizontalAlign, VerticalAlign};
+
+pub struct TextSettings {
+    pub font: Arc<Font>,
+    pub align_h: HorizontalAlign,
+    pub align_v: VerticalAlign,
+    pub size: f32,
+    pub pos: Vec2,
+    pub max_width: Option<f32>,
+    pub max_height: Option<f32>,
+}
+
+impl TextSettings {
+    pub fn layout(&self, text: &str, layout_engine: &mut Layout) {
+        layout_engine.reset(&LayoutSettings {
+            x: self.pos.x,
+            y: self.pos.y,
+            max_width: self.max_width,
+            max_height: self.max_height,
+            horizontal_align: self.align_h,
+            vertical_align: self.align_v,
+            wrap_style: WrapStyle::Word,
+            wrap_hard_breaks: true,
+        });
+        layout_engine.append(
+            &[&*self.font],
+            &TextStyle {
+                text,
+                px: self.size,
+                font_index: 0,
+                user_data: (),
+            },
+        );
+    }
+}
+
 pub struct Canvas {
     target: tiny_skia::Canvas,
     scale: f32,
+    glyph_caches: AHashMap<*const Font, FontGlyphCache>,
+    layout_engine: Layout,
 }
 
 impl Canvas {
     pub fn new(pixel_width: u32, pixel_height: u32, scale: f32) -> Self {
         let target = tiny_skia::Canvas::new(pixel_width, pixel_height).expect("dimensions 0");
-        let mut canvas = Self { target, scale };
+        let mut canvas = Self {
+            target,
+            scale,
+            glyph_caches: AHashMap::new(),
+            layout_engine: Layout::new(fontdue::layout::CoordinateSystem::PositiveYDown),
+        };
         canvas.apply_scale();
         canvas
     }
@@ -176,6 +227,29 @@ impl Canvas {
         self
     }
 
+    pub fn fill_text(&mut self, text: &str, settings: &TextSettings) {
+        settings.layout(text, &mut self.layout_engine);
+
+        let glyph_cache = self
+            .glyph_caches
+            .entry(settings.font.deref() as *const Font)
+            .or_default();
+        for glyph in self.layout_engine.glyphs() {
+            let pixmap = glyph_cache.glyph(&settings.font, glyph.key);
+            if let Some(pixmap) = pixmap {
+                self.target.draw_pixmap(
+                    glyph.x as i32,
+                    glyph.y as i32,
+                    pixmap,
+                    &PixmapPaint {
+                        quality: FilterQuality::Bilinear,
+                        ..Default::default()
+                    },
+                );
+            }
+        }
+    }
+
     pub fn data(&self) -> &[u8] {
         self.target.pixmap.data()
     }
@@ -200,4 +274,41 @@ impl Canvas {
     fn remove_scale(&mut self) {
         self.target.reset_transform();
     }
+}
+
+#[derive(Default)]
+struct FontGlyphCache {
+    glyphs: AHashMap<GlyphRasterConfig, Option<Pixmap>>,
+}
+
+impl FontGlyphCache {
+    pub fn glyph(&mut self, font: &Font, key: GlyphRasterConfig) -> Option<&Pixmap> {
+        self.glyphs
+            .entry(key)
+            .or_insert_with(|| {
+                let (metrics, bitmap) = font.rasterize_config(key);
+                if metrics.width == 0 || metrics.height == 0 {
+                    None
+                } else {
+                    Some(coverage_to_pixmap(
+                        &bitmap,
+                        metrics.width as u32,
+                        metrics.height as u32,
+                    ))
+                }
+            })
+            .as_ref()
+    }
+}
+
+fn coverage_to_pixmap(coverage: &[u8], width: u32, height: u32) -> Pixmap {
+    let mut pixmap = Pixmap::new(width, height).expect("pixmap of size 0");
+    pixmap
+        .pixels_mut()
+        .iter_mut()
+        .zip(coverage.iter().copied())
+        .for_each(|(pixel, coverage)| {
+            *pixel = ColorU8::from_rgba(u8::MAX, u8::MAX, u8::MAX, coverage).premultiply();
+        });
+    pixmap
 }
