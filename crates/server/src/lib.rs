@@ -25,7 +25,8 @@ pub const TICK_LENGTH: u32 = 1000 / TPS;
 
 /// The number of chunks visible from a player's current
 /// position. Fixed for now.
-pub const VIEW_DISTANCE: u32 = 4;
+pub const VIEW_DISTANCE: u32 = 32;
+pub const WORLD_SIZE: i32 = 64;
 
 /// The top-level server state.
 pub struct Server {
@@ -96,7 +97,6 @@ impl Server {
 }
 
 fn generate_world() -> Zone {
-    const WORLD_SIZE: i32 = 8;
     let mut builder = ZoneBuilder::new(
         ChunkPos {
             x: -WORLD_SIZE,
@@ -120,7 +120,7 @@ fn generate_world() -> Zone {
     }
 
     let mut zone = builder.build().ok().expect("failed to generate all chunks");
-    worldgen::generate(&mut zone, worldgen::Settings { seed: 10 });
+    worldgen::generate(&mut zone, worldgen::Settings { seed: 11 });
     zone
 }
 

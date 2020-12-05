@@ -71,8 +71,9 @@ fn update_chunks(players: &[UpdatedView], game: &Game) {
         let mut chunks_to_load = Vec::new_in(game.bump());
         chunks_to_load.extend(new_chunks.difference(&old_chunks));
         // Send closest chunks first.
-        chunks_to_load
-            .sort_unstable_by_key(|chunk: &ChunkPos| chunk.manhattan_distance(new_view.center()));
+        chunks_to_load.sort_unstable_by_key(|chunk: &ChunkPos| {
+            chunk.manhattan_distance(new_view.center()).abs()
+        });
 
         let mailbox = game.ecs().get::<Mailbox>(player).unwrap();
         let username = game.ecs().get::<Username>(player).unwrap();
