@@ -9,10 +9,8 @@ layout (location = 1) out vec3 oViewPos;
 layout (location = 2) out vec3 oWorldPos;
 layout (location = 3) out vec3 oNormal;
 
-layout (set = 0, binding = 0) uniform Locals {
-    mat4 uTransform;
-};
 layout (push_constant) uniform Globals {
+    vec4 uTransform;
     mat4 uView;
     mat4 uPerspective;
 };
@@ -21,7 +19,7 @@ void main() {
     oTexCoord = iTexCoord;
     oNormal = iNormal;
 
-    oWorldPos = (uTransform * vec4(iPos, 1.0)).xyz;
+    oWorldPos = (uTransform + vec4(iPos, 1.0)).xyz;
 
     oViewPos = (uView * vec4(oWorldPos, 1.0)).xyz;
 

@@ -3,9 +3,8 @@ use std::{collections::BTreeMap, mem::size_of, sync::Arc};
 use ahash::{AHashMap, AHashSet};
 use anyhow::{bail, Context};
 use common::{chunk::CHUNK_DIM, ChunkPos};
-use glam::Mat4;
+use glam::{vec4, Mat4, Vec4};
 use mesher::{ChunkMesher, GpuMesh};
-use wgpu::util::DeviceExt;
 
 use crate::{
     asset::{shader::ShaderAsset, texture::TextureAsset, Assets},
@@ -19,13 +18,6 @@ use self::mesher::RawVertex;
 use super::{utils::TextureArray, Resources, DEPTH_FORMAT, SAMPLE_COUNT, SC_FORMAT};
 
 mod mesher;
-
-#[derive(Debug)]
-struct ChunkRenderData {
-    mesh: GpuMesh,
-    bind_group: wgpu::BindGroup,
-    transform: wgpu::Buffer,
-}
 
 /// The chunk renderer. Responsible for
 /// 1) Maintaining a mesh for each chunk to be rendered.
@@ -41,11 +33,11 @@ pub struct ChunkRenderer {
 
     mesher: ChunkMesher,
 
-    chunks: BTreeMap<ChunkPos, ChunkRenderData>,
+    chunks: BTreeMap<ChunkPos, GpuMesh>,
     pending_meshes: AHashSet<ChunkPos>,
 
     pipeline: wgpu::RenderPipeline,
-    bg_layout: wgpu::BindGroupLayout,
+    bind_group: wgpu::BindGroup,
 }
 
 impl ChunkRenderer {
@@ -81,15 +73,6 @@ impl ChunkRenderer {
                     entries: &[
                         wgpu::BindGroupLayoutEntry {
                             binding: 0,
-                            visibility: wgpu::ShaderStage::VERTEX,
-                            ty: wgpu::BindingType::UniformBuffer {
-                                dynamic: false,
-                                min_binding_size: None,
-                            },
-                            count: None,
-                        },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 1,
                             visibility: wgpu::ShaderStage::FRAGMENT,
                             ty: wgpu::BindingType::SampledTexture {
                                 dimension: wgpu::TextureViewDimension::D2Array,
@@ -99,7 +82,7 @@ impl ChunkRenderer {
                             count: None,
                         },
                         wgpu::BindGroupLayoutEntry {
-                            binding: 2,
+                            binding: 1,
                             visibility: wgpu::ShaderStage::FRAGMENT,
                             ty: wgpu::BindingType::Sampler { comparison: false },
                             count: None,
@@ -115,7 +98,7 @@ impl ChunkRenderer {
                     bind_group_layouts: &[&bg_layout],
                     push_constant_ranges: &[wgpu::PushConstantRange {
                         stages: wgpu::ShaderStage::VERTEX,
-                        range: 0..size_of::<Mat4>() as u32 * 2,
+                        range: 0..(size_of::<Mat4>() as u32 * 2 + size_of::<Vec4>() as u32),
                     }],
                 });
         let vertex = resources.device().create_shader_module(
@@ -171,6 +154,24 @@ impl ChunkRenderer {
                 sample_mask: !0,
                 alpha_to_coverage_enabled: false,
             });
+        let bind_group = resources
+            .device()
+            .create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("chunk_bg"),
+                layout: &bg_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(
+                            &block_textures.get().create_view(&Default::default()),
+                        ),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&block_sampler),
+                    },
+                ],
+            });
 
         Ok(Self {
             block_textures,
@@ -179,8 +180,8 @@ impl ChunkRenderer {
             mesher,
             chunks: BTreeMap::new(),
             pending_meshes: AHashSet::new(),
-            bg_layout,
             pipeline,
+            bind_group,
         })
     }
 
@@ -188,7 +189,7 @@ impl ChunkRenderer {
         self.update_chunk_meshes(resources, game);
     }
 
-    fn update_chunk_meshes(&mut self, resources: &Resources, game: &mut Game) {
+    fn update_chunk_meshes(&mut self, _resources: &Resources, game: &mut Game) {
         for event in game.events().iter::<ChunkLoaded>() {
             if let Some(chunk) = game.main_zone().chunk(event.pos) {
                 self.mesher.spawn(event.pos, chunk.clone());
@@ -205,60 +206,13 @@ impl ChunkRenderer {
         }
 
         for (pos, mesh) in self.mesher.iter_finished() {
-            if self.pending_meshes.remove(&pos) {
-                // Create chunk render data.
-                let transform = Mat4::from_translation(glam::vec3(
-                    (pos.x * CHUNK_DIM as i32) as f32,
-                    (pos.y * CHUNK_DIM as i32) as f32,
-                    (pos.z * CHUNK_DIM as i32) as f32,
-                ));
-                let transform =
-                    resources
-                        .device()
-                        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                            label: Some(&format!("chunk_transform_{},{},{}", pos.x, pos.y, pos.z)),
-                            contents: bytemuck::cast_slice(&[transform]),
-                            usage: wgpu::BufferUsage::UNIFORM,
-                        });
-                let bind_group = resources
-                    .device()
-                    .create_bind_group(&wgpu::BindGroupDescriptor {
-                        label: Some(&format!("chunk_bg_{},{},{}", pos.x, pos.y, pos.z)),
-                        layout: &self.bg_layout,
-                        entries: &[
-                            wgpu::BindGroupEntry {
-                                binding: 0,
-                                resource: wgpu::BindingResource::Buffer(transform.slice(..)),
-                            },
-                            wgpu::BindGroupEntry {
-                                binding: 1,
-                                resource: wgpu::BindingResource::TextureView(
-                                    &self.block_textures.get().create_view(
-                                        &wgpu::TextureViewDescriptor {
-                                            label: None,
-                                            format: Some(wgpu::TextureFormat::Bgra8UnormSrgb),
-                                            dimension: Some(wgpu::TextureViewDimension::D2Array),
-                                            aspect: wgpu::TextureAspect::All,
-                                            base_mip_level: 0,
-                                            level_count: None,
-                                            base_array_layer: 0,
-                                            array_layer_count: None,
-                                        },
-                                    ),
-                                ),
-                            },
-                            wgpu::BindGroupEntry {
-                                binding: 2,
-                                resource: wgpu::BindingResource::Sampler(&self.block_sampler),
-                            },
-                        ],
-                    });
-                let data = ChunkRenderData {
-                    mesh,
-                    bind_group,
-                    transform,
-                };
-                self.chunks.insert(pos, data);
+            let was_pending = self.pending_meshes.remove(&pos);
+            let mesh = match mesh {
+                Some(mesh) => mesh,
+                None => continue,
+            };
+            if was_pending {
+                self.chunks.insert(pos, mesh);
 
                 log::trace!(
                     "Loaded mesh for {:?}. Total chunks in renderer: {}",
@@ -276,17 +230,37 @@ impl ChunkRenderer {
         matrices: Matrices,
     ) {
         pass.set_pipeline(&self.pipeline);
+        pass.set_bind_group(0, &self.bind_group, &[]);
 
         // Render each chunk.
-        for chunk_data in self.chunks.values() {
-            pass.set_bind_group(0, &chunk_data.bind_group, &[]);
-            pass.set_vertex_buffer(0, chunk_data.mesh.vertex_buffer.slice(..));
+        for (pos, mesh) in &self.chunks {
+            pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+
+            #[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
+            #[repr(C)]
+            struct PushConstants {
+                transform: Vec4,
+                view: Mat4,
+                projection: Mat4,
+            }
+            let transform = vec4(
+                (pos.x * CHUNK_DIM as i32) as f32,
+                (pos.y * CHUNK_DIM as i32) as f32,
+                (pos.z * CHUNK_DIM as i32) as f32,
+                0.,
+            );
+            let push_constants = PushConstants {
+                transform,
+                view: matrices.view,
+                projection: matrices.projection,
+            };
             pass.set_push_constants(
                 wgpu::ShaderStage::VERTEX,
                 0,
-                bytemuck::cast_slice(&[matrices]),
+                bytemuck::cast_slice(&[push_constants]),
             );
-            pass.draw(0..chunk_data.mesh.vertex_count, 0..1);
+
+            pass.draw(0..mesh.vertex_count, 0..1);
         }
     }
 }

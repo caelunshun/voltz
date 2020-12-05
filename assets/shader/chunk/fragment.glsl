@@ -7,8 +7,8 @@ layout (location = 3) in vec3 iNormal;
 
 layout (location = 0) out vec4 oColor;
 
-layout (set = 0, binding = 1) uniform texture2DArray uBlockTextures;
-layout (set = 0, binding = 2) uniform sampler uBlockSampler;
+layout (set = 0, binding = 0) uniform texture2DArray uBlockTextures;
+layout (set = 0, binding = 1) uniform sampler uBlockSampler;
 
 const vec4 fogColor = vec4(0.6, 0.7, 0.8, 1.0);
 const float fogDensity = 0.005;

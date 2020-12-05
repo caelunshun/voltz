@@ -1,3 +1,5 @@
+cargo-features = ["named-profiles"]
+
 [workspace]
 members = [
     "crates/utils",
@@ -13,3 +15,9 @@ members = [
 
 [profile.dev]
 opt-level = 1
+
+[profile.measure]
+inherits = "release"
+lto = true
+debug = true
+codegen-units = 1

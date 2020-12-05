@@ -82,10 +82,14 @@ impl ChunkMesher {
                 let mut bump = bump.borrow_mut();
                 {
                     let mesh = algo::mesh(&mesher.models, &chunk, &bump);
-                    let label = format!("chunk_mesh_{:?}", pos);
-                    let mesh = mesher.upload(&label, &mesh);
+                    let gpu_mesh = if mesh.vertices.is_empty() {
+                        None
+                    } else {
+                        let label = format!("chunk_mesh_{:?}", pos);
+                        Some(mesher.upload(&label, &mesh))
+                    };
 
-                    mesher.completed.push((pos, mesh));
+                    mesher.completed.push((pos, gpu_mesh));
                 }
                 bump.reset();
             });
@@ -93,7 +97,7 @@ impl ChunkMesher {
     }
 
     /// Returns an iterator over meshes which have completed.
-    pub fn iter_finished<'a>(&'a self) -> impl Iterator<Item = (ChunkPos, GpuMesh)> + 'a {
+    pub fn iter_finished<'a>(&'a self) -> impl Iterator<Item = (ChunkPos, Option<GpuMesh>)> + 'a {
         iter::from_fn(move || self.0.completed.pop())
     }
 }
@@ -110,7 +114,7 @@ struct Mesher {
     resources: Arc<Resources>,
 
     /// Completed meshes.
-    completed: SegQueue<(ChunkPos, GpuMesh)>,
+    completed: SegQueue<(ChunkPos, Option<GpuMesh>)>,
 }
 
 impl Mesher {

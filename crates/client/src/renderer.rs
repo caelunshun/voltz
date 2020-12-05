@@ -11,6 +11,7 @@ use self::chunk::ChunkRenderer;
 
 mod chunk;
 mod present;
+mod ui;
 mod utils;
 
 const SC_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
@@ -75,7 +76,7 @@ impl Renderer {
             &wgpu::DeviceDescriptor {
                 features: wgpu::Features::PUSH_CONSTANTS,
                 limits: wgpu::Limits {
-                    max_push_constant_size: 128,
+                    max_push_constant_size: 256,
                     ..Default::default()
                 },
                 shader_validation: true,

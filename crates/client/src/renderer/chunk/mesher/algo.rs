@@ -2,7 +2,7 @@
 
 use ahash::AHashMap;
 use bumpalo::Bump;
-use common::{chunk::CHUNK_DIM, chunk::CHUNK_VOLUME, Chunk};
+use common::{blocks, chunk::CHUNK_DIM, chunk::CHUNK_VOLUME, BlockId, Chunk};
 use glam::{Vec2, Vec3, Vec3Swizzles};
 use utils::BitSet;
 
@@ -303,6 +303,12 @@ pub(super) fn mesh<'bump>(
     let mesh = Mesh {
         vertices: Vec::new_in(bump),
     };
+    if chunk.palette() == [BlockId::new(blocks::Air)] {
+        // Fast path: the chunk is completely air,
+        // so return an empty mesh.
+        return mesh;
+    }
+
     let mut remaining = BitSet::new_in(CHUNK_VOLUME, bump);
     remaining.fill();
     let mut state = State {
