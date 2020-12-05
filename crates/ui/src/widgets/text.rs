@@ -5,7 +5,6 @@ use fontdue::{
     Font,
 };
 use glam::{vec2, Vec2};
-use stretch::{geometry::Size, style::Dimension};
 
 use crate::{canvas::TextSettings, WidgetData, WidgetState};
 
@@ -60,24 +59,7 @@ impl WidgetData for Text<'_> {
     }
 
     fn into_state(self) -> Self::State {
-        let mut layout_engine = Layout::new(fontdue::layout::CoordinateSystem::PositiveYDown);
-        self.settings.layout(self.text, &mut layout_engine);
-        let width = layout_engine
-            .glyphs()
-            .iter()
-            .map(|pos| {
-                (pos.x
-                    + self
-                        .settings
-                        .font
-                        .metrics(pos.key.c, self.settings.size)
-                        .advance_width) as i32
-            })
-            .max()
-            .unwrap_or_default() as f32;
-        let height = layout_engine.height();
         State {
-            size: vec2(width, height),
             text: self.text.to_owned(),
             settings: self.settings,
         }
@@ -92,29 +74,25 @@ impl WidgetData for Text<'_> {
     }
 }
 
+#[derive(Debug)]
 pub struct State {
     text: String,
-    size: Vec2,
     settings: TextSettings,
 }
 
 impl WidgetState for State {
     fn style(&self) -> stretch::style::Style {
-        stretch::style::Style {
-            max_size: Size {
-                width: Dimension::Points(self.size.x),
-                height: Dimension::Points(self.size.y),
-            },
-            ..Default::default()
-        }
+        stretch::style::Style::default()
     }
 
     fn is_leaf(&self) -> bool {
         true
     }
 
-    fn compute_size(&self) -> Vec2 {
-        self.size
+    fn compute_size(&mut self, max_width: Option<f32>, max_height: Option<f32>) -> Vec2 {
+        self.settings.max_width = max_width;
+        self.settings.max_height = max_height;
+        compute_size(&self.settings, &self.text)
     }
 
     fn draw(&mut self, bounds: utils::Rect, cv: &mut crate::Canvas) {
@@ -124,4 +102,23 @@ impl WidgetState for State {
 
         cv.fill_text(&self.text, &self.settings);
     }
+}
+
+fn compute_size(settings: &TextSettings, text: &str) -> Vec2 {
+    let mut layout_engine = Layout::new(fontdue::layout::CoordinateSystem::PositiveYDown);
+    settings.layout(text, &mut layout_engine);
+    let width = layout_engine
+        .glyphs()
+        .iter()
+        .map(|pos| {
+            (pos.x
+                + settings
+                    .font
+                    .metrics(pos.key.c, settings.size)
+                    .advance_width) as i32
+        })
+        .max()
+        .unwrap_or_default() as f32;
+    let height = layout_engine.height();
+    vec2(width, height)
 }

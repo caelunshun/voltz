@@ -1,4 +1,8 @@
-use std::{ops::Deref, sync::Arc};
+use std::{
+    fmt::{self, Debug, Formatter},
+    ops::Deref,
+    sync::Arc,
+};
 
 use ahash::AHashMap;
 use fontdue::{
@@ -144,6 +148,17 @@ pub struct TextSettings {
     pub pos: Vec2,
     pub max_width: Option<f32>,
     pub max_height: Option<f32>,
+}
+
+impl Debug for TextSettings {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("TextSettings")
+            .field("size", &self.size)
+            .field("pos", &self.pos)
+            .field("max_width", &self.max_width)
+            .field("max_height", &self.max_height)
+            .finish()
+    }
 }
 
 impl TextSettings {

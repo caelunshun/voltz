@@ -26,6 +26,18 @@ impl Container {
         }
     }
 
+    /// Creates a new `Container` that will lay out
+    /// its children in a row.
+    #[track_caller]
+    pub fn row() -> Self {
+        Self {
+            style: Style {
+                ..Default::default()
+            },
+            location: Location::caller(),
+        }
+    }
+
     /// Updates the style.
     pub fn with_style(mut self, style: impl FnOnce(&mut Style)) -> Self {
         style(&mut self.style);

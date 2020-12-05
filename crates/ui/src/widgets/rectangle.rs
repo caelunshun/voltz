@@ -51,6 +51,7 @@ impl WidgetData for Rectangle {
     }
 }
 
+#[derive(Debug)]
 pub struct State {
     size: Vec2,
     color: Color,
@@ -71,7 +72,7 @@ impl WidgetState for State {
         true
     }
 
-    fn compute_size(&self) -> Vec2 {
+    fn compute_size(&mut self, _max_width: Option<f32>, _max_height: Option<f32>) -> Vec2 {
         self.size
     }
 

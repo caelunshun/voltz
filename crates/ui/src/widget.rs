@@ -1,4 +1,4 @@
-use std::panic::Location;
+use std::{fmt::Debug, panic::Location};
 
 use crate::Canvas;
 use glam::Vec2;
@@ -25,14 +25,15 @@ pub trait WidgetData {
     fn apply_changes(&self, state: &Self::State, changes: &mut ChangeList<Self::State>);
 }
 
-pub trait WidgetState {
+pub trait WidgetState: Debug {
     fn style(&self) -> Style;
 
     fn is_leaf(&self) -> bool {
         false
     }
 
-    fn compute_size(&self) -> Vec2 {
+    fn compute_size(&mut self, max_width: Option<f32>, max_height: Option<f32>) -> Vec2 {
+        let _ = (max_width, max_height);
         Vec2::zero()
     }
 

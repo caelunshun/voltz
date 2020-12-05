@@ -1,4 +1,4 @@
-use std::{path::Path, sync::atomic::AtomicU64};
+use std::{cell::RefCell, path::Path, rc::Rc, sync::atomic::AtomicU64};
 
 use crate::{Canvas, WidgetData, WidgetState};
 use ahash::AHashMap;
@@ -91,7 +91,7 @@ impl Ui {
                     pos: vec2(layout.location.x, layout.location.y) + parent_pos,
                     size: vec2(layout.size.width, layout.size.height),
                 };
-                slot.node.draw(bounds, canvas);
+                slot.node.borrow_mut().draw(bounds, canvas);
                 parent_pos + bounds.pos
             });
     }
@@ -122,8 +122,12 @@ impl Ui {
             .unwrap();
     }
 
-    fn insert_node(&mut self, parent: Option<NodeId>, node: Box<dyn WidgetState>) -> NodeId {
-        let stretch_node = self.create_stretch_node(&*node);
+    fn insert_node(
+        &mut self,
+        parent: Option<NodeId>,
+        node: Rc<RefCell<dyn WidgetState>>,
+    ) -> NodeId {
+        let stretch_node = self.create_stretch_node(&node);
         let slot = NodeSlot { node, stretch_node };
         let id = NodeId::next();
         self.tree.nodes.insert(id, slot);
@@ -144,31 +148,24 @@ impl Ui {
         id
     }
 
-    fn create_stretch_node(&mut self, node: &dyn WidgetState) -> Node {
+    fn create_stretch_node(&mut self, node_rc: &Rc<RefCell<dyn WidgetState>>) -> Node {
+        let node = node_rc.borrow();
         if node.is_leaf() {
-            let computed_size = node.compute_size();
-            let measure = Box::new(move |constraints: stretch::geometry::Size<Number>| {
-                let mut size = stretch::geometry::Size {
-                    width: computed_size.x,
-                    height: computed_size.y,
+            let node_rc = Rc::clone(node_rc);
+            let measure = Box::new(move |max_size: stretch::geometry::Size<Number>| {
+                let max_width = match max_size.width {
+                    Number::Defined(x) => Some(x),
+                    Number::Undefined => None,
                 };
-                // Fit to aspect ratio.
-                match (constraints.width, constraints.height) {
-                    (Number::Undefined, Number::Undefined) => (),
-                    (Number::Defined(width), Number::Undefined) => {
-                        size.height = width * size.height / size.width;
-                        size.width = width;
-                    }
-                    (Number::Undefined, Number::Defined(height)) => {
-                        size.width = height * size.width / size.height;
-                        size.height = height;
-                    }
-                    (Number::Defined(width), Number::Defined(height)) => {
-                        size.width = width;
-                        size.height = height;
-                    }
-                }
-                Ok(size)
+                let max_height = match max_size.height {
+                    Number::Defined(x) => Some(x),
+                    Number::Undefined => None,
+                };
+                let size = node_rc.borrow_mut().compute_size(max_width, max_height);
+                Ok(Size {
+                    width: size.x,
+                    height: size.y,
+                })
             });
             self.stretch.new_leaf(node.style(), measure).unwrap()
         } else {
@@ -191,8 +188,10 @@ impl<'a> UiBuilder<'a> {
         D::State: WidgetState + 'static,
     {
         let node = data.into_state();
-        self.ui
-            .insert_node(self.parent_stack.last().copied(), Box::new(node));
+        self.ui.insert_node(
+            self.parent_stack.last().copied(),
+            Rc::new(RefCell::new(node)),
+        );
         self
     }
 
@@ -204,9 +203,10 @@ impl<'a> UiBuilder<'a> {
         D::State: WidgetState + 'static,
     {
         let node = data.into_state();
-        let id = self
-            .ui
-            .insert_node(self.parent_stack.last().copied(), Box::new(node));
+        let id = self.ui.insert_node(
+            self.parent_stack.last().copied(),
+            Rc::new(RefCell::new(node)),
+        );
         self.parent_stack.push(id);
         self
     }
@@ -220,7 +220,7 @@ impl<'a> UiBuilder<'a> {
 }
 
 struct NodeSlot {
-    node: Box<dyn WidgetState>,
+    node: Rc<RefCell<dyn WidgetState>>,
     stretch_node: Node,
 }
 
