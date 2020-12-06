@@ -2,10 +2,10 @@ use crate::{event::MouseMoved, game::Game, PLAYER_BBOX};
 use bytemuck::{Pod, Zeroable};
 use common::{blocks, entity::Vel, BlockId, Orient, Pos, System, SystemExecutor};
 use glam::{Mat4, Vec2, Vec3, Vec3A};
-use sdl2::keyboard::Keycode;
 use splines::{Interpolation, Key, Spline};
+use winit::event::VirtualKeyCode;
 
-const MOUSE_SENSITIVITY: f32 = 6.;
+const MOUSE_SENSITIVITY: f32 = 3.;
 const KEYBOARD_SENSITIVITY: f32 = 6.;
 const EYE_HEIGHT: f32 = 1.6;
 
@@ -32,19 +32,19 @@ impl System<Game> for CameraSystem {
     fn run(&mut self, game: &mut Game) {
         self.tick_keyboard(game);
 
-        let mut dx = 0;
-        let mut dy = 0;
+        let mut dx = 0.;
+        let mut dy = 0.;
         for event in game.events().iter::<MouseMoved>() {
             dx += event.xrel;
             dy += event.yrel;
         }
-        if dx != 0 || dy != 0 {
+        if dx != 0. || dy != 0. {
             self.on_mouse_move(game, dx, dy);
         }
 
         // Update matrices
-        let (width, height) = game.window().size();
-        let aspect_ratio = width as f32 / height as f32;
+        let size = game.window().inner_size();
+        let aspect_ratio = size.width as f32 / size.height as f32;
         let matrices = self.matrices(game, aspect_ratio);
         game.set_matrices(matrices);
     }
@@ -78,7 +78,7 @@ impl CameraSystem {
     }
 
     /// Handles a relative mouse motion event.
-    fn on_mouse_move(&mut self, game: &mut Game, dx: i32, dy: i32) {
+    fn on_mouse_move(&mut self, game: &mut Game, dx: f64, dy: f64) {
         let dx = dx as f32;
         let dy = dy as f32;
 
@@ -101,19 +101,19 @@ impl CameraSystem {
 
         let mut vel = Vec3A::zero();
         let mut moved = false;
-        if game.is_key_pressed(Keycode::W) {
+        if game.is_key_pressed(VirtualKeyCode::W) {
             vel += KEYBOARD_SENSITIVITY * forward;
             moved = true;
         }
-        if game.is_key_pressed(Keycode::S) {
+        if game.is_key_pressed(VirtualKeyCode::S) {
             vel -= KEYBOARD_SENSITIVITY * forward;
             moved = true;
         }
-        if game.is_key_pressed(Keycode::A) {
+        if game.is_key_pressed(VirtualKeyCode::A) {
             vel += KEYBOARD_SENSITIVITY * right;
             moved = true;
         }
-        if game.is_key_pressed(Keycode::D) {
+        if game.is_key_pressed(VirtualKeyCode::D) {
             vel -= KEYBOARD_SENSITIVITY * right;
             moved = true;
         }
@@ -159,7 +159,7 @@ impl CameraSystem {
     }
 
     fn tick_jump(&mut self, game: &mut Game) {
-        if game.is_key_pressed(Keycode::Space)
+        if game.is_key_pressed(VirtualKeyCode::Space)
             && physics::is_on_ground(game.player_ref().get::<Pos>().unwrap().0, |pos| {
                 game.main_zone().block(pos) != Some(BlockId::new(blocks::Air))
             })

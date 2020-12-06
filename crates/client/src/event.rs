@@ -1,5 +1,5 @@
 use common::ChunkPos;
-use sdl2::keyboard::Keycode;
+use winit::event::VirtualKeyCode;
 
 /// A chunk has been loaded.
 #[derive(Copy, Clone, Debug)]
@@ -16,20 +16,20 @@ pub struct ChunkUnloaded {
 /// A key has been pressed.
 #[derive(Copy, Clone, Debug)]
 pub struct KeyPressed {
-    pub key: Keycode,
+    pub key: VirtualKeyCode,
 }
 
 /// A key has been released.
 #[derive(Copy, Clone, Debug)]
 pub struct KeyReleased {
-    pub key: Keycode,
+    pub key: VirtualKeyCode,
 }
 
 /// The mouse has moved.
 #[derive(Copy, Clone, Debug)]
 pub struct MouseMoved {
-    pub xrel: i32,
-    pub yrel: i32,
+    pub xrel: f64,
+    pub yrel: f64,
 }
 
 /// The window has been resized.

@@ -143,8 +143,8 @@ impl UiRenderer {
     }
 
     pub fn prep_render(&mut self, resources: &Resources, game: &mut Game) {
-        let (width, height) = game.window().size();
-        let ortho = Mat4::orthographic_lh(0., width as f32, height as f32, 0., 0., 1.);
+        let size = game.window().inner_size();
+        let ortho = Mat4::orthographic_lh(0., size.width as f32, size.height as f32, 0., 0., 1.);
 
         let mut uis = Vec::new_in(game.bump());
         let mut store = game.ui_store();
@@ -152,8 +152,8 @@ impl UiRenderer {
 
         self.bundles.clear();
         for ui in uis {
-            let width = ui.width.resolve(width as f32) as u32;
-            let height = ui.height.resolve(height as f32) as u32;
+            let width = ui.width.resolve(size.width as f32) as u32;
+            let height = ui.height.resolve(size.height as f32) as u32;
             let canvas = self
                 .canvas_cache
                 .entry((width, height))

@@ -7,7 +7,7 @@ use hecs::{DynamicBundle, Entity, EntityRef};
 use protocol::{bridge::ToServer, Bridge};
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
-use sdl2::{keyboard::Keycode, video::Window, EventPump};
+use winit::{dpi::PhysicalPosition, event::VirtualKeyCode, window::Window};
 
 use crate::{camera::Matrices, debug::DebugData, ui::UiStore};
 
@@ -44,14 +44,11 @@ pub struct Game {
     /// Time in seconds since the previous frame.
     dt: f32,
 
-    /// The SDL2 event pump.
-    event_pump: RefCell<EventPump>,
-
     /// The window.
     window: Window,
 
     /// The set of pressed keys.
-    pressed_keys: AHashSet<Keycode>,
+    pressed_keys: AHashSet<VirtualKeyCode>,
 
     /// UIs to render this frame.
     ui_store: RefCell<UiStore>,
@@ -62,6 +59,8 @@ pub struct Game {
     closed: Cell<bool>,
 
     pub debug_data: DebugData,
+
+    pub mouse_pos: PhysicalPosition<f64>,
 }
 
 impl Game {
@@ -74,7 +73,6 @@ impl Game {
         bridge: Bridge<ToServer>,
         player_components: impl DynamicBundle,
         window: Window,
-        event_pump: EventPump,
         bump: Bump,
     ) -> Self {
         let mut ecs = hecs::World::new();
@@ -88,9 +86,10 @@ impl Game {
         let events = RefCell::new(EventBus::new());
 
         let ui_store = RefCell::new(UiStore::default());
-        let event_pump = RefCell::new(event_pump);
         let pressed_keys = AHashSet::new();
         let matrices = Default::default();
+
+        let mouse_pos = PhysicalPosition::new(0., 0.);
 
         Self {
             ecs,
@@ -102,12 +101,12 @@ impl Game {
             bridge,
             dt: 0.,
             window,
-            event_pump,
             pressed_keys,
             ui_store,
             matrices,
             closed: Cell::new(false),
             debug_data: Default::default(),
+            mouse_pos,
         }
     }
 
@@ -194,19 +193,15 @@ impl Game {
         &mut self.window
     }
 
-    pub fn event_pump(&self) -> RefMut<EventPump> {
-        self.event_pump.borrow_mut()
-    }
-
-    pub fn insert_pressed_key(&mut self, key: Keycode) {
+    pub fn insert_pressed_key(&mut self, key: VirtualKeyCode) {
         self.pressed_keys.insert(key);
     }
 
-    pub fn remove_pressed_key(&mut self, key: Keycode) {
+    pub fn remove_pressed_key(&mut self, key: VirtualKeyCode) {
         self.pressed_keys.remove(&key);
     }
 
-    pub fn is_key_pressed(&self, key: Keycode) -> bool {
+    pub fn is_key_pressed(&self, key: VirtualKeyCode) -> bool {
         self.pressed_keys.contains(&key)
     }
 

@@ -3,7 +3,7 @@
 
 use std::{alloc::System, thread, time::Instant};
 
-use anyhow::{anyhow, bail, Context};
+use anyhow::{bail, Context};
 use asset::{
     font::FontLoader, model::YamlModel, shader::SpirvLoader, texture::PngLoader, Assets, YamlLoader,
 };
@@ -21,10 +21,15 @@ use protocol::{
     Bridge, PROTOCOL_VERSION,
 };
 use renderer::Renderer;
-use sdl2::{video::Window, EventPump, Sdl};
 use server::Server;
 use simple_logger::SimpleLogger;
 use utils::TrackAllocator;
+use winit::{
+    dpi::LogicalSize,
+    event::{Event, WindowEvent},
+    event_loop::{ControlFlow, EventLoop},
+    window::{Window, WindowBuilder},
+};
 
 const PLAYER_BBOX: Aabb = Aabb {
     min: Vec3A::zero(),
@@ -51,22 +56,38 @@ pub struct Client {
 
     systems: SystemExecutor<Game>,
 
-    sdl: Sdl,
     game: Game,
 
     conn: Connection,
 }
 
 impl Client {
-    pub fn run(mut self) -> anyhow::Result<()> {
-        while !self.game.should_close() {
-            let start = Instant::now();
-            self.sdl.mouse().set_relative_mouse_mode(true);
-            self.tick();
-            let elapsed = start.elapsed();
-            self.game.set_dt(elapsed.as_secs_f32());
-        }
-        Ok(())
+    pub fn run(mut self, event_loop: EventLoop<()>) -> anyhow::Result<()> {
+        let mut previous = Instant::now();
+        event_loop.run(move |event, _, control_flow| {
+            *control_flow = ControlFlow::Poll;
+            match event {
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => {
+                    *control_flow = ControlFlow::Exit;
+                }
+                Event::MainEventsCleared => {
+                    self.tick();
+                    let elapsed = previous.elapsed();
+                    self.game.set_dt(elapsed.as_secs_f32());
+                    previous = Instant::now();
+
+                    self.game.window_mut().set_cursor_visible(false);
+                    if let Err(e) = self.game.window_mut().set_cursor_grab(true) {
+                        log::error!("Failed to grab cursor: {:?}", e);
+                    }
+                }
+                Event::WindowEvent { event, .. } => input::handle_event(&event, &mut self.game),
+                _ => (),
+            }
+        });
     }
 
     fn tick(&mut self) {
@@ -84,20 +105,13 @@ fn main() -> anyhow::Result<()> {
         .with_level(log::LevelFilter::Debug)
         .init()?;
     let assets = load_assets()?;
-    let (sdl, window, event_pump) =
-        init_sdl2().map_err(|e| anyhow!("failed to initialize SDL2: {}", e))?;
+    let (window, event_loop) = init_window()?;
     let renderer = Renderer::new(&window, &assets).context("failed to intiailize wgpu renderer")?;
 
     let bridge = launch_server()?;
     let (pos, orient, vel) = log_in(&bridge).context("failed to connect to integrated server")?;
     let conn = Connection::new(bridge.clone());
-    let mut game = Game::new(
-        bridge,
-        (pos, orient, vel, PLAYER_BBOX),
-        window,
-        event_pump,
-        Bump::new(),
-    );
+    let mut game = Game::new(bridge, (pos, orient, vel, PLAYER_BBOX), window, Bump::new());
 
     let mut systems = setup(&assets)?;
     renderer.setup(&mut systems, &mut game);
@@ -105,14 +119,12 @@ fn main() -> anyhow::Result<()> {
     let client = Client {
         assets,
 
-        sdl,
-
         game,
         conn,
 
         systems,
     };
-    client.run()
+    client.run(event_loop)
 }
 
 fn load_assets() -> anyhow::Result<Assets> {
@@ -126,23 +138,18 @@ fn load_assets() -> anyhow::Result<Assets> {
     Ok(assets)
 }
 
-fn init_sdl2() -> Result<(Sdl, Window, EventPump), String> {
-    let sdl2 = sdl2::init()?;
-    let video = sdl2.video()?;
+fn init_window() -> anyhow::Result<(Window, EventLoop<()>)> {
+    let event_loop = EventLoop::new();
+    let window = WindowBuilder::new()
+        .with_title("Voltz")
+        .with_inner_size(LogicalSize::new(1920 / 2, 1080 / 2))
+        .with_resizable(true)
+        .build(&event_loop)
+        .context("failed to create window")?;
 
-    let title = "Voltz";
-    let width = 1920 / 2;
-    let height = 1080 / 2;
+    log::info!("Window scale factor: {}", window.scale_factor());
 
-    let window = video
-        .window(title, width, height)
-        .allow_highdpi()
-        .resizable()
-        .build()
-        .map_err(|e| e.to_string())?;
-    let event_pump = sdl2.event_pump()?;
-
-    Ok((sdl2, window, event_pump))
+    Ok((window, event_loop))
 }
 
 fn launch_server() -> anyhow::Result<Bridge<ToServer>> {
@@ -197,7 +204,6 @@ fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<(Pos, Orient, Vel)> {
 fn setup(assets: &Assets) -> anyhow::Result<SystemExecutor<Game>> {
     let mut systems = SystemExecutor::new();
 
-    input::setup(&mut systems);
     camera::setup(&mut systems);
     entity::setup(&mut systems);
     debug::setup(&mut systems, assets)?;

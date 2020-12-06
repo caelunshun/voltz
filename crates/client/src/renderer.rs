@@ -4,9 +4,9 @@ use anyhow::{anyhow, Context};
 use common::{System, SystemExecutor};
 use futures_executor::block_on;
 use present::Presenter;
-use sdl2::video::Window;
+use winit::window::Window;
 
-use crate::{asset::Assets, event::WindowResized, game::Game};
+use crate::{asset::Assets, game::Game};
 
 use self::{chunk::ChunkRenderer, ui::UiRenderer};
 
@@ -63,7 +63,7 @@ impl Renderer {
                 .collect::<Vec<_>>()
         );
         let surface = block_on(async {
-            // SAFETY: a wgpu surface can be created with an SDL2 window.
+            // SAFETY: a wgpu surface can be created with a winit window.
             unsafe { instance.create_surface(window) }
         });
         let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
@@ -95,8 +95,13 @@ impl Renderer {
             surface,
         });
 
-        let (width, height) = window.size();
-        let presenter = Presenter::new(resources.device(), resources.surface(), width, height);
+        let size = window.inner_size();
+        let presenter = Presenter::new(
+            resources.device(),
+            resources.surface(),
+            size.width,
+            size.height,
+        );
 
         let mut init_encoder =
             resources
@@ -206,8 +211,9 @@ impl Renderer {
 
 impl System<Game> for Renderer {
     fn run(&mut self, game: &mut Game) {
-        for resized in game.events().iter::<WindowResized>() {
-            self.on_resize(resized.new_width, resized.new_height);
+        let size = game.window().inner_size();
+        if size.width != self.presenter.width() || size.height != self.presenter.height() {
+            self.on_resize(size.width, size.height);
         }
 
         self.render(game);

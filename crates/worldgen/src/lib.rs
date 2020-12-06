@@ -15,6 +15,8 @@
 //! the density and biome grids and generates chunks with actual blocks. Finally, post-processing
 //! adds features, such as trees and caves.
 
+#![allow(warnings)] // temp until I work on worldgen
+
 use common::{blocks, chunk::CHUNK_DIM, BlockId, Chunk, ChunkPos, Zone};
 use rayon::prelude::*;
 use simdnoise::NoiseBuilder;

@@ -15,10 +15,10 @@ voltzui = { path = "../ui" }
 hecs = { version = "0.3", features = ["macros"] }
 
 wgpu = "0.6"
+winit = { version = "0.23", default-features = false, features = ["x11"] }
 glam = { version = "0.11", features = ["bytemuck"] }
 splines = { version = "3", features = ["impl-glam"] }
-sdl2 = { version = "0.34", features = ["raw-window-handle"] }
-fontdue = "0.4"
+fontdue = { git = "https://github.com/mooman219/fontdue" }
 tiny-skia = "0.2"
 image = { version = "0.23", default-features = false, features = ["png"] }
 guillotiere = "0.6"

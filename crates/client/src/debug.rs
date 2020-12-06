@@ -4,8 +4,8 @@ use common::{event::EventBus, Orient, Pos, System, SystemExecutor};
 use fontdue::Font;
 use glam::Vec2;
 use protocol::PROTOCOL_VERSION;
-use sdl2::keyboard::Keycode;
 use voltzui::widgets::Text;
+use winit::event::VirtualKeyCode;
 
 use crate::{
     asset::{Asset, Assets},
@@ -38,7 +38,7 @@ struct DebugSystem {
 impl DebugSystem {
     fn update_enabled(&mut self, events: &mut EventBus) {
         for key_pressed in events.iter::<KeyPressed>() {
-            if key_pressed.key == Keycode::F3 {
+            if key_pressed.key == VirtualKeyCode::F3 {
                 self.enabled = !self.enabled;
             }
         }

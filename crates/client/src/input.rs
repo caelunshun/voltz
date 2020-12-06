@@ -1,54 +1,47 @@
-//! Takes SDL2 input and writes it to the event bus.
+//! Takes `winit` input and writes it to the event bus.
 
-use common::SystemExecutor;
-use sdl2::event::{Event, WindowEvent};
+use winit::{
+    dpi::PhysicalPosition,
+    event::{ElementState, WindowEvent},
+};
 
 use crate::{
     event::{KeyPressed, KeyReleased, MouseMoved, WindowResized},
     game::Game,
 };
 
-pub fn setup(systems: &mut SystemExecutor<Game>) {
-    systems.add(input_system);
-}
-
-fn input_system(game: &mut Game) {
-    let mut pressed = Vec::new();
-    let mut released = Vec::new();
-    let mut bus = game.events();
-    for event in game.event_pump().poll_iter() {
-        match event {
-            Event::Window { win_event, .. } => match win_event {
-                WindowEvent::Resized(new_width, new_height) => bus.push(WindowResized {
-                    new_width: new_width as u32,
-                    new_height: new_height as u32,
-                }),
-                WindowEvent::Close => game.close(),
-                _ => (),
-            },
-            Event::KeyDown { keycode, .. } => {
-                if let Some(key) = keycode {
-                    bus.push(KeyPressed { key });
-                    pressed.push(key);
+pub fn handle_event(event: &WindowEvent, game: &mut Game) {
+    match event {
+        WindowEvent::Resized(new_size) => game.events().push(WindowResized {
+            new_width: new_size.width,
+            new_height: new_size.height,
+        }),
+        WindowEvent::KeyboardInput { input, .. } => match input.state {
+            ElementState::Pressed => {
+                if let Some(key) = input.virtual_keycode {
+                    game.events().push(KeyPressed { key });
+                    game.insert_pressed_key(key);
                 }
             }
-            Event::KeyUp { keycode, .. } => {
-                if let Some(key) = keycode {
-                    bus.push(KeyReleased { key });
-                    released.push(key);
+            ElementState::Released => {
+                if let Some(key) = input.virtual_keycode {
+                    game.events().push(KeyReleased { key });
+                    game.remove_pressed_key(key);
                 }
             }
-            Event::MouseMotion { xrel, yrel, .. } => bus.push(MouseMoved { xrel, yrel }),
-            _ => (),
+        },
+        WindowEvent::CursorMoved { position, .. } => {
+            let size = game.window().inner_size();
+            game.events().push(MouseMoved {
+                xrel: ((position.x - game.mouse_pos.x) / size.width as f64) * 1000.,
+                yrel: ((position.y - game.mouse_pos.y) / size.height as f64) * 1000.,
+            });
+            let mouse_pos = PhysicalPosition::new(size.width as f64 / 2., size.height as f64 / 2.);
+            game.mouse_pos = mouse_pos;
+            if let Err(e) = game.window_mut().set_cursor_position(mouse_pos) {
+                log::error!("Failed to set cursor position: {:?}", e);
+            }
         }
-    }
-
-    drop(bus);
-
-    for pressed in pressed {
-        game.insert_pressed_key(pressed);
-    }
-    for released in released {
-        game.remove_pressed_key(released);
+        _ => (),
     }
 }
