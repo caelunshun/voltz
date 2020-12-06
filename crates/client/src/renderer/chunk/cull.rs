@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use ahash::{AHashMap, AHashSet};
 use arrayvec::ArrayVec;
 use bitflags::bitflags;
@@ -7,6 +9,7 @@ use common::{
     chunk::{CHUNK_DIM, CHUNK_VOLUME},
     BlockId, Chunk, ChunkPos,
 };
+use crossbeam_queue::SegQueue;
 use utils::BitSet;
 
 /// Algorithm to skip rendering chunks which are occluded
@@ -23,9 +26,53 @@ use utils::BitSet;
 pub struct Culler {
     chunks: AHashMap<ChunkPos, ChunkVisibility>,
     visible: AHashSet<ChunkPos>,
+    task_queue: Arc<SegQueue<(ChunkPos, ChunkVisibility)>>,
 }
 
 impl Culler {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn on_chunk_loaded(&mut self, pos: ChunkPos, chunk: &Chunk) {
+        if chunk.is_empty() {
+            self.chunks.insert(pos, full_visibility());
+        } else {
+            let chunk = chunk.clone();
+            let task_queue = Arc::clone(&self.task_queue);
+            rayon::spawn(move || {
+                utils::THREAD_BUMP.with(|bump| {
+                    let mut bump = bump.borrow_mut();
+                    let vis = compute_visibility(&chunk, &*bump);
+                    bump.reset();
+                    task_queue.push((pos, vis));
+                });
+            });
+        }
+    }
+
+    pub fn on_chunk_unloaded(&mut self, pos: ChunkPos) {
+        self.chunks.remove(&pos);
+        log::trace!("Removed visibility for {:?}", pos);
+    }
+
+    pub fn visible_chunks<'a>(
+        &'a mut self,
+        player_pos: ChunkPos,
+        bump: &Bump,
+    ) -> impl Iterator<Item = ChunkPos> + 'a {
+        self.poll_tasks();
+        self.estimate_visible_set(player_pos, bump);
+        self.visible.iter().copied()
+    }
+
+    fn poll_tasks(&mut self) {
+        while let Some((pos, vis)) = self.task_queue.pop() {
+            self.chunks.insert(pos, vis);
+            log::trace!("Computed visibility for {:?}", pos);
+        }
+    }
+
     /// Performs a depth-first search on the graph of `ChunkVisibility`s
     /// to estimate the set of chunks visible from `root`.
     fn estimate_visible_set(&mut self, root: ChunkPos, bump: &Bump) {

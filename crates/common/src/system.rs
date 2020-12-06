@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 /// A simple system executor.
 ///
 /// Each system is conceptually a `fn(&mut self, &mut State)`,
@@ -47,7 +49,12 @@ where
     pub fn run(&mut self, game: &mut S, mut before: impl FnMut(&mut S, usize)) {
         for (i, system) in self.systems.iter_mut().enumerate() {
             before(game, i);
+            let start = Instant::now();
             system.run(game);
+            let elapsed = start.elapsed();
+            if elapsed.as_secs_f64() >= 0.01 {
+                log::debug!("{} took {:?}", system.name(), elapsed);
+            }
         }
     }
 }

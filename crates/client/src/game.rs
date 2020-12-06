@@ -143,6 +143,10 @@ impl Game {
         &self.bump
     }
 
+    pub fn bump_mut(&mut self) -> &mut Bump {
+        &mut self.bump
+    }
+
     /// Gets the non-cryptographic random number generator used
     /// by the game.
     pub fn rng(&self) -> RefMut<impl Rng> {

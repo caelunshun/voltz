@@ -1,8 +1,8 @@
-use std::{collections::BTreeMap, mem::size_of, sync::Arc};
+use std::{collections::BTreeMap, mem::size_of, sync::Arc, time::Instant};
 
 use ahash::{AHashMap, AHashSet};
 use anyhow::{bail, Context};
-use common::{chunk::CHUNK_DIM, ChunkPos};
+use common::{chunk::CHUNK_DIM, ChunkPos, Pos};
 use glam::{vec4, Mat4, Vec4};
 use mesher::{ChunkMesher, GpuMesh};
 
@@ -12,7 +12,7 @@ use crate::{
     game::Game,
 };
 
-use self::mesher::RawVertex;
+use self::{cull::Culler, mesher::RawVertex};
 
 use super::{utils::TextureArray, Resources, DEPTH_FORMAT, SAMPLE_COUNT, SC_FORMAT};
 
@@ -23,7 +23,6 @@ mod mesher;
 /// 1) Maintaining a mesh for each chunk to be rendered.
 /// 2) Maintaining a texture array containing block textures.
 /// 3) Rendering each visible chunk.
-#[derive(Debug)]
 pub struct ChunkRenderer {
     block_textures: TextureArray,
     /// Maps block slug => texture index into `block_textures`.
@@ -32,6 +31,7 @@ pub struct ChunkRenderer {
     block_sampler: wgpu::Sampler,
 
     mesher: ChunkMesher,
+    culler: Culler,
 
     chunks: BTreeMap<ChunkPos, GpuMesh>,
     pending_meshes: AHashSet<ChunkPos>,
@@ -178,6 +178,7 @@ impl ChunkRenderer {
             block_texture_indexes,
             block_sampler,
             mesher,
+            culler: Culler::new(),
             chunks: BTreeMap::new(),
             pending_meshes: AHashSet::new(),
             pipeline,
@@ -192,6 +193,8 @@ impl ChunkRenderer {
     fn update_chunk_meshes(&mut self, _resources: &Resources, game: &mut Game) {
         for event in game.events().iter::<ChunkLoaded>() {
             if let Some(chunk) = game.main_zone().chunk(event.pos) {
+                log::trace!("Spawning cull task for {:?}", event.pos);
+                self.culler.on_chunk_loaded(event.pos, chunk);
                 self.mesher.spawn(event.pos, chunk.clone());
                 log::trace!("Spawning mesher task for {:?}", event.pos);
                 self.pending_meshes.insert(event.pos);
@@ -201,6 +204,7 @@ impl ChunkRenderer {
         for event in game.events().iter::<ChunkUnloaded>() {
             self.chunks.remove(&event.pos);
             self.pending_meshes.remove(&event.pos);
+            self.culler.on_chunk_unloaded(event.pos);
 
             log::trace!("Dropping chunk mesh for {:?}", event.pos);
         }
@@ -221,8 +225,6 @@ impl ChunkRenderer {
                 );
             }
         }
-
-        game.debug_data.render_chunks = self.chunks.len();
     }
 
     pub fn do_render<'a>(&'a mut self, pass: &mut wgpu::RenderPass<'a>, game: &mut Game) {
@@ -231,8 +233,20 @@ impl ChunkRenderer {
 
         let matrices = game.matrices();
 
+        let pos = *game.player_ref().get::<Pos>().unwrap();
+        let player_chunk = ChunkPos::from_pos(pos);
+
         // Render each chunk.
-        for (pos, mesh) in self.chunks.iter().rev() {
+        let mut count = 0;
+        let start = Instant::now();
+        let visible = self.culler.visible_chunks(player_chunk, game.bump());
+        log::debug!("Cull took {:?}", start.elapsed());
+        let start = Instant::now();
+        for pos in visible {
+            let mesh = match self.chunks.get(&pos) {
+                Some(m) => m,
+                None => continue,
+            };
             pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
 
             #[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]
@@ -260,7 +274,11 @@ impl ChunkRenderer {
             );
 
             pass.draw(0..mesh.vertex_count, 0..1);
+            count += 1;
         }
+        log::debug!("Draw recording took {:?}", start.elapsed());
+
+        game.debug_data.render_chunks = count;
     }
 }
 

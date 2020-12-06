@@ -77,6 +77,11 @@ impl Client {
                     self.tick();
                     let elapsed = previous.elapsed();
                     self.game.set_dt(elapsed.as_secs_f32());
+
+                    if elapsed.as_secs_f64() >= (1. / 60.) {
+                        log::warn!("Frame took too long: {:?}", elapsed);
+                    }
+
                     previous = Instant::now();
 
                     self.game.window_mut().set_cursor_visible(false);
@@ -97,6 +102,8 @@ impl Client {
         self.systems.run(&mut self.game, |game, system| {
             game.events().set_system(system + 1)
         });
+
+        self.game.bump_mut().reset();
     }
 }
 
