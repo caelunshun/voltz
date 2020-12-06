@@ -34,6 +34,7 @@ bytemuck = { version = "1", features = ["derive"] }
 indoc = "1"
 bitflags = "1"
 arrayvec = "0.5"
+hashbrown = { git = "https://github.com/rust-lang/hashbrown", features = ["nightly"] }
 
 rand = "0.7"
 rand_pcg = "0.2"

@@ -208,6 +208,7 @@ dependencies = [
  "futures-executor",
  "glam",
  "guillotiere",
+ "hashbrown 0.9.1 (git+https://github.com/rust-lang/hashbrown)",
  "hecs",
  "image",
  "indoc",

@@ -1,10 +1,11 @@
+use ahash::{AHashMap, AHashSet};
 use arrayvec::ArrayVec;
 use bitflags::bitflags;
 use bumpalo::Bump;
 use common::{
     blocks,
     chunk::{CHUNK_DIM, CHUNK_VOLUME},
-    BlockId, Chunk,
+    BlockId, Chunk, ChunkPos,
 };
 use utils::BitSet;
 
@@ -18,7 +19,98 @@ use utils::BitSet;
 ///
 /// This struct contains the necessary state to offload
 /// the culling computation to another thread.
-pub struct Culler {}
+#[derive(Default)]
+pub struct Culler {
+    chunks: AHashMap<ChunkPos, ChunkVisibility>,
+    visible: AHashSet<ChunkPos>,
+}
+
+impl Culler {
+    /// Performs a depth-first search on the graph of `ChunkVisibility`s
+    /// to estimate the set of chunks visible from `root`.
+    fn estimate_visible_set(&mut self, root: ChunkPos, bump: &Bump) {
+        self.visible.clear();
+        let mut stack = Vec::new_in(bump);
+        let mut visited = hashbrown::HashSet::new_in(bump);
+
+        for face in Face::iter() {
+            stack.push((root, face));
+        }
+
+        while let Some((chunk, inbound_face)) = stack.pop() {
+            if !visited.insert((chunk, inbound_face)) {
+                continue;
+            }
+            let vis = match self.chunks.get(&chunk) {
+                Some(&v) => v,
+                None => continue,
+            };
+            let outbound_faces = vis.visible_faces(inbound_face);
+            self.visible.insert(chunk);
+
+            if outbound_faces.contains(FaceBit::BOTTOM) {
+                stack.push((
+                    ChunkPos {
+                        x: chunk.x,
+                        y: chunk.y - 1,
+                        z: chunk.z,
+                    },
+                    Face::Top,
+                ));
+            }
+            if outbound_faces.contains(FaceBit::TOP) {
+                stack.push((
+                    ChunkPos {
+                        x: chunk.x,
+                        y: chunk.y + 1,
+                        z: chunk.z,
+                    },
+                    Face::Bottom,
+                ));
+            }
+            if outbound_faces.contains(FaceBit::NEGX) {
+                stack.push((
+                    ChunkPos {
+                        x: chunk.x - 1,
+                        y: chunk.y,
+                        z: chunk.z,
+                    },
+                    Face::PosX,
+                ));
+            }
+            if outbound_faces.contains(FaceBit::POSX) {
+                stack.push((
+                    ChunkPos {
+                        x: chunk.x + 1,
+                        y: chunk.y,
+                        z: chunk.z,
+                    },
+                    Face::NegX,
+                ));
+            }
+            if outbound_faces.contains(FaceBit::NEGZ) {
+                stack.push((
+                    ChunkPos {
+                        x: chunk.x,
+                        y: chunk.y,
+                        z: chunk.z - 1,
+                    },
+                    Face::PosZ,
+                ));
+            }
+            if outbound_faces.contains(FaceBit::POSZ) {
+                stack.push((
+                    ChunkPos {
+                        x: chunk.x,
+                        y: chunk.y,
+                        z: chunk.z + 1,
+                    },
+                    Face::NegZ,
+                ));
+            }
+        }
+    }
+}
 
 bitflags! {
     /// A set of faces.
@@ -169,7 +261,7 @@ impl Face {
     }
 }
 
-/// Stores which faces are visible from each face in a chunk.{}
+/// Stores which faces are visible from each face in a chunk.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Default)]
 struct ChunkVisibility {
     faces: [FaceBit; 6],
@@ -361,5 +453,53 @@ mod tests {
             assert_eq!(vis.visible_faces(Face::NegZ), FaceBit::empty());
             assert_eq!(vis.visible_faces(Face::PosZ), FaceBit::empty());
         }
+    }
+
+    #[test]
+    fn estimate_culling_maze() {
+        let mut culler = Culler::default();
+        for x in 0..16 {
+            for y in 0..16 {
+                for z in 0..16 {
+                    let visibility = if y == 8 && z == 8 {
+                        full_visibility()
+                    } else {
+                        ChunkVisibility::default()
+                    };
+                    culler.chunks.insert(ChunkPos { x, y, z }, visibility);
+                }
+            }
+        }
+
+        let start = Instant::now();
+        culler.estimate_visible_set(ChunkPos { x: 8, y: 8, z: 8 }, &Bump::new());
+        println!("Took {:?}", start.elapsed());
+
+        let mut expected = Vec::new();
+        for x in 0..16 {
+            for y in 7..=9 {
+                for z in 7..=9 {
+                    if y == 7 && z != 8 {
+                        continue;
+                    }
+                    if y == 9 && z != 8 {
+                        continue;
+                    }
+                    if z == 7 && y != 8 {
+                        continue;
+                    }
+                    if z == 9 && y != 8 {
+                        continue;
+                    }
+                    expected.push(ChunkPos { x, y, z });
+                }
+            }
+        }
+        expected.sort_unstable();
+
+        let mut found: Vec<_> = culler.visible.iter().copied().collect();
+        found.sort_unstable();
+
+        assert_eq!(found, expected);
     }
 }
