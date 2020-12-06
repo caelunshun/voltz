@@ -269,7 +269,7 @@ impl Canvas {
         self.target.pixmap.data()
     }
 
-    pub fn save_png(&self, path: &std::path::Path) {
+    pub fn save_png(&self, path: impl AsRef<std::path::Path>) {
         self.target
             .pixmap
             .save_png(path)

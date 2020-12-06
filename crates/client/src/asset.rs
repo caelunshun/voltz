@@ -8,6 +8,7 @@ use anyhow::{anyhow, Context};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use walkdir::WalkDir;
 
+pub mod font;
 pub mod model;
 pub mod shader;
 pub mod texture;
@@ -40,6 +41,10 @@ impl<T> Asset<T> {
     {
         let asset = Arc::downcast::<T>(asset).ok()?;
         Some(Self(asset))
+    }
+
+    pub fn as_arc(&self) -> &Arc<T> {
+        &self.0
     }
 }
 

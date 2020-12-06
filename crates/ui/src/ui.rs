@@ -1,4 +1,4 @@
-use std::{cell::RefCell, path::Path, rc::Rc, sync::atomic::AtomicU64};
+use std::{cell::RefCell, rc::Rc, sync::atomic::AtomicU64};
 
 use crate::{Canvas, WidgetData, WidgetState};
 use ahash::AHashMap;
@@ -10,7 +10,7 @@ use stretch::{
     style::{Dimension, Style},
     Stretch,
 };
-use utils::{Color, Rect};
+use utils::Rect;
 
 /// The unique ID of a UI node.
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -23,11 +23,8 @@ impl NodeId {
     }
 }
 
-/// Stores the persistent node tree
-/// as well as the UI canvas.
+/// Stores the persistent node tree.
 pub struct Ui {
-    canvas: Canvas,
-
     stretch: Stretch,
     root_stretch_node: Node,
 
@@ -35,21 +32,15 @@ pub struct Ui {
 }
 
 impl Ui {
-    /// Creates a new `Ui` to render to the given
-    /// pixel width and height.
-    ///
-    /// # Panics
-    /// Panics if either pixel dimensions is zero.
-    pub fn new(pixel_width: u32, pixel_height: u32, scale: f32) -> Self {
-        let canvas = Canvas::new(pixel_width, pixel_height, scale);
-
+    /// Creates a new `Ui`.
+    pub fn new() -> Self {
         let mut stretch = Stretch::new();
         let root_stretch_node = stretch
             .new_node(
                 Style {
                     size: Size {
-                        width: Dimension::Points(canvas.width()),
-                        height: Dimension::Points(canvas.height()),
+                        width: Dimension::Percent(1.),
+                        height: Dimension::Percent(1.),
                     },
                     ..Default::default()
                 },
@@ -60,7 +51,6 @@ impl Ui {
         let tree = Tree::default();
 
         Self {
-            canvas,
             stretch,
             root_stretch_node,
             tree,
@@ -71,19 +61,21 @@ impl Ui {
     /// are added to the UI, widgets from the previous
     /// `build()` call are persited, and missing widgets are removed.
     pub fn build(&mut self) -> UiBuilder {
+        self.tree.children.clear();
+        self.tree.roots.clear();
+        for (_, slot) in self.tree.nodes.drain() {
+            self.stretch.remove(slot.stretch_node);
+        }
         UiBuilder {
             ui: self,
             parent_stack: Vec::new(),
         }
     }
 
-    /// Renders to the canvas.
-    pub fn render(&mut self) {
-        self.compute_layout();
-        self.canvas.clear(Color::rgb(0., 0., 0.));
-        let Self {
-            canvas, stretch, ..
-        } = self;
+    /// Renders to the canvas. Does not clear.
+    pub fn render(&mut self, canvas: &mut Canvas) {
+        self.compute_layout(canvas.width(), canvas.height());
+        let Self { stretch, .. } = self;
         self.tree
             .fold_traverse(Vec2::zero(), |parent_pos, _id, slot| {
                 let layout = stretch.layout(slot.stretch_node).unwrap();
@@ -96,27 +88,13 @@ impl Ui {
             });
     }
 
-    /// Gets the rendered pixel data as RGBA.
-    pub fn data(&self) -> &[u8] {
-        self.canvas.data()
-    }
-
-    /// Saves the rendered canvas as a PNG. Only
-    /// used for testing.
-    ///
-    /// # Panics
-    /// Panics if an IO error occurs.
-    pub fn save_png(&self, path: impl AsRef<Path>) {
-        self.canvas.save_png(path.as_ref())
-    }
-
-    fn compute_layout(&mut self) {
+    fn compute_layout(&mut self, width: f32, height: f32) {
         self.stretch
             .compute_layout(
                 self.root_stretch_node,
                 Size {
-                    width: Number::Defined(self.canvas.width()),
-                    height: Number::Defined(self.canvas.height()),
+                    width: Number::Defined(width),
+                    height: Number::Defined(height),
                 },
             )
             .unwrap();

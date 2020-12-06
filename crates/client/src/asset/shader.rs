@@ -7,7 +7,7 @@ pub struct ShaderAsset(wgpu::ShaderModuleSource<'static>);
 
 impl ShaderAsset {
     /// Gets the SPIRV data.
-    pub fn to_source(&self) -> wgpu::ShaderModuleSource {
+    pub fn to_source(&self) -> wgpu::ShaderModuleSource<'static> {
         match &self.0 {
             wgpu::ShaderModuleSource::SpirV(spv) => wgpu::ShaderModuleSource::SpirV(spv.clone()),
             wgpu::ShaderModuleSource::Wgsl(wgsl) => wgpu::ShaderModuleSource::Wgsl(wgsl.clone()),

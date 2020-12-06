@@ -1,11 +1,15 @@
-use std::cell::{RefCell, RefMut};
+use std::cell::{Cell, RefCell, RefMut};
 
+use ahash::AHashSet;
 use bumpalo::Bump;
 use common::{event::EventBus, world::SparseZone, World};
 use hecs::{DynamicBundle, Entity, EntityRef};
 use protocol::{bridge::ToServer, Bridge};
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
+use sdl2::{keyboard::Keycode, video::Window, EventPump};
+
+use crate::{camera::Matrices, ui::UiStore};
 
 /// Uberstruct containing the game state. Includes zones, entities,
 /// blocks, etc.
@@ -39,6 +43,23 @@ pub struct Game {
 
     /// Time in seconds since the previous frame.
     dt: f32,
+
+    /// The window.
+    window: Window,
+
+    /// The SDL2 event pump.
+    event_pump: RefCell<EventPump>,
+
+    /// The set of pressed keys.
+    pressed_keys: AHashSet<Keycode>,
+
+    /// UIs to render this frame.
+    ui_store: RefCell<UiStore>,
+
+    /// The camera projection matrices.
+    matrices: Matrices,
+
+    closed: Cell<bool>,
 }
 
 impl Game {
@@ -50,6 +71,8 @@ impl Game {
     pub fn new(
         bridge: Bridge<ToServer>,
         player_components: impl DynamicBundle,
+        window: Window,
+        event_pump: EventPump,
         bump: Bump,
     ) -> Self {
         let mut ecs = hecs::World::new();
@@ -62,6 +85,11 @@ impl Game {
 
         let events = RefCell::new(EventBus::new());
 
+        let ui_store = RefCell::new(UiStore::default());
+        let event_pump = RefCell::new(event_pump);
+        let pressed_keys = AHashSet::new();
+        let matrices = Default::default();
+
         Self {
             ecs,
             player,
@@ -71,6 +99,12 @@ impl Game {
             rng,
             bridge,
             dt: 0.,
+            window,
+            event_pump,
+            pressed_keys,
+            ui_store,
+            matrices,
+            closed: Cell::new(false),
         }
     }
 
@@ -147,5 +181,49 @@ impl Game {
 
     pub fn set_dt(&mut self, dt: f32) {
         self.dt = dt;
+    }
+
+    pub fn window(&self) -> &Window {
+        &self.window
+    }
+
+    pub fn window_mut(&mut self) -> &mut Window {
+        &mut self.window
+    }
+
+    pub fn event_pump(&self) -> RefMut<EventPump> {
+        self.event_pump.borrow_mut()
+    }
+
+    pub fn insert_pressed_key(&mut self, key: Keycode) {
+        self.pressed_keys.insert(key);
+    }
+
+    pub fn remove_pressed_key(&mut self, key: Keycode) {
+        self.pressed_keys.remove(&key);
+    }
+
+    pub fn is_key_pressed(&self, key: Keycode) -> bool {
+        self.pressed_keys.contains(&key)
+    }
+
+    pub fn ui_store(&self) -> RefMut<UiStore> {
+        self.ui_store.borrow_mut()
+    }
+
+    pub fn matrices(&self) -> Matrices {
+        self.matrices
+    }
+
+    pub fn set_matrices(&mut self, matrices: Matrices) {
+        self.matrices = matrices;
+    }
+
+    pub fn close(&self) {
+        self.closed.set(true);
+    }
+
+    pub fn should_close(&self) -> bool {
+        self.closed.get()
     }
 }

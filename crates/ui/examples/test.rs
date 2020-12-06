@@ -5,7 +5,7 @@ use glam::vec2;
 use utils::Color;
 use voltzui::{
     widgets::{Container, Rectangle, Text},
-    Dimension, Ui,
+    Canvas, Dimension, Ui,
 };
 
 fn main() {
@@ -16,13 +16,13 @@ fn main() {
         )
         .unwrap(),
     );
-    let mut ui = Ui::new(1024, 1024, 1.);
+    let mut ui = Ui::new();
     ui.build()
         .begin(Container::row())
         .push(Rectangle::new(vec2(100., 100.), Color::rgb(0.5, 0.6, 0.8)))
         .push(Rectangle::new(vec2(150., 50.), Color::rgb(0.9, 0.7, 0.4)))
         .begin(Container::column().with_style(|s| {
-            s.justify_content = voltzui::JustifyContent::FlexEnd;
+            s.justify_content = voltzui::JustifyContent::Center;
             s.size.width = Dimension::Percent(0.6);
             s.margin.bottom = Dimension::Points(10.);
         }))
@@ -38,6 +38,7 @@ fn main() {
         .end()
         .end();
 
-    ui.render();
-    ui.save_png("ui.png");
+    let mut cv = Canvas::new(1024, 1024, 1.);
+    ui.render(&mut cv);
+    cv.save_png("ui.png");
 }

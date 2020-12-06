@@ -1,6 +1,6 @@
 #!/bin/bash
 
-shaders=("chunk")
+shaders=("chunk" "blit")
 
 for shader in ${shaders[@]}; do
   rm -r assets/shader_compiled/${shader} || true

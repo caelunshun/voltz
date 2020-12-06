@@ -25,8 +25,8 @@ pub const TICK_LENGTH: u32 = 1000 / TPS;
 
 /// The number of chunks visible from a player's current
 /// position. Fixed for now.
-pub const VIEW_DISTANCE: u32 = 32;
-pub const WORLD_SIZE: i32 = 64;
+pub const VIEW_DISTANCE: u32 = 8;
+pub const WORLD_SIZE: i32 = 16;
 
 /// The top-level server state.
 pub struct Server {

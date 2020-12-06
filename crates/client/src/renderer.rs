@@ -1,13 +1,14 @@
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
+use common::System;
 use futures_executor::block_on;
 use present::Presenter;
 use sdl2::video::Window;
 
-use crate::{asset::Assets, camera::Matrices, game::Game};
+use crate::{asset::Assets, event::WindowResized, game::Game};
 
-use self::chunk::ChunkRenderer;
+use self::{chunk::ChunkRenderer, ui::UiRenderer};
 
 mod chunk;
 mod present;
@@ -44,10 +45,10 @@ impl Resources {
     }
 }
 
-#[derive(Debug)]
 pub struct Renderer {
     resources: Arc<Resources>,
     chunk_renderer: ChunkRenderer,
+    ui_renderer: UiRenderer,
     presenter: Presenter,
 }
 
@@ -106,17 +107,20 @@ impl Renderer {
 
         let chunk_renderer = ChunkRenderer::new(&resources, assets, &mut init_encoder)
             .context("failed to initialize chunk renderer")?;
+        let ui_renderer =
+            UiRenderer::new(&resources, assets).context("failed to initialize UI renderer")?;
 
         resources.queue().submit(vec![init_encoder.finish()]);
 
         Ok(Self {
             resources,
             chunk_renderer,
+            ui_renderer,
             presenter,
         })
     }
 
-    pub fn on_resize(&mut self, new_width: u32, new_height: u32) {
+    fn on_resize(&mut self, new_width: u32, new_height: u32) {
         self.presenter = Presenter::new(
             self.resources.device(),
             self.resources.surface(),
@@ -126,16 +130,17 @@ impl Renderer {
     }
 
     /// Renders a frame.
-    pub fn render(&mut self, game: &mut Game, matrices: Matrices) {
+    fn render(&mut self, game: &mut Game) {
         self.prep_render(game);
-        self.do_render(game, matrices);
+        self.do_render(game);
     }
 
     fn prep_render(&mut self, game: &mut Game) {
         self.chunk_renderer.prep_render(&self.resources, game);
+        self.ui_renderer.prep_render(&self.resources, game);
     }
 
-    fn do_render(&mut self, game: &mut Game, matrices: Matrices) {
+    fn do_render(&mut self, game: &mut Game) {
         let mut encoder =
             self.resources
                 .device()
@@ -149,7 +154,7 @@ impl Renderer {
             .expect("failed to get next output frame");
 
         {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            let mut pass_3d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
                     attachment: self.presenter.sample_buffer(),
                     resolve_target: Some(&frame.output.view),
@@ -173,9 +178,33 @@ impl Renderer {
                 }),
             });
 
-            self.chunk_renderer.do_render(&mut pass, game, matrices);
+            self.chunk_renderer.do_render(&mut pass_3d, game);
+        }
+        {
+            let mut pass_2d = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                color_attachments: &[wgpu::RenderPassColorAttachmentDescriptor {
+                    attachment: &frame.output.view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: true,
+                    },
+                }],
+                depth_stencil_attachment: None,
+            });
+            self.ui_renderer.do_render(&mut pass_2d);
         }
 
         self.resources.queue().submit(vec![encoder.finish()]);
+    }
+}
+
+impl System<Game> for Renderer {
+    fn run(&mut self, game: &mut Game) {
+        for resized in game.events().iter::<WindowResized>() {
+            self.on_resize(resized.new_width, resized.new_height);
+        }
+
+        self.render(game);
     }
 }

@@ -1,31 +1,51 @@
-use crate::{game::Game, PLAYER_BBOX};
+use crate::{event::MouseMoved, game::Game, PLAYER_BBOX};
 use bytemuck::{Pod, Zeroable};
-use common::{blocks, entity::Vel, BlockId, Orient, Pos};
+use common::{blocks, entity::Vel, BlockId, Orient, Pos, System, SystemExecutor};
 use glam::{Mat4, Vec2, Vec3, Vec3A};
-use sdl2::keyboard::{KeyboardState, Scancode};
+use sdl2::keyboard::Keycode;
 use splines::{Interpolation, Key, Spline};
 
-const MOUSE_SENSITIVITY: f32 = 4.;
+const MOUSE_SENSITIVITY: f32 = 6.;
 const KEYBOARD_SENSITIVITY: f32 = 6.;
 const EYE_HEIGHT: f32 = 1.6;
 
 const JUMP_VEL_Y: f32 = 8.;
 
-#[derive(Copy, Clone, Zeroable, Pod)]
+#[derive(Default, Copy, Clone, Zeroable, Pod)]
 #[repr(C)]
 pub struct Matrices {
     pub view: Mat4,
     pub projection: Mat4,
 }
 
-pub struct CameraController {
+pub fn setup(systems: &mut SystemExecutor<Game>) {
+    systems.add(CameraSystem::new());
+}
+
+struct CameraSystem {
     move_spline: Spline<f32, f32>,
     move_time: Option<f32>,
     stop_time: f32,
 }
 
-impl CameraController {
-    pub fn new() -> Self {
+impl System<Game> for CameraSystem {
+    fn run(&mut self, game: &mut Game) {
+        self.tick_keyboard(game);
+        let event = game.events().iter::<MouseMoved>().next().copied();
+        if let Some(event) = event {
+            self.on_mouse_move(game, event.xrel, event.yrel);
+        }
+
+        // Update matrices
+        let (width, height) = game.window().size();
+        let aspect_ratio = width as f32 / height as f32;
+        let matrices = self.matrices(game, aspect_ratio);
+        game.set_matrices(matrices);
+    }
+}
+
+impl CameraSystem {
+    fn new() -> Self {
         let move_spline = Spline::from_iter(
             [
                 Key {
@@ -52,7 +72,7 @@ impl CameraController {
     }
 
     /// Handles a relative mouse motion event.
-    pub fn on_mouse_move(&mut self, game: &mut Game, dx: i32, dy: i32) {
+    fn on_mouse_move(&mut self, game: &mut Game, dx: i32, dy: i32) {
         let dx = dx as f32;
         let dy = dy as f32;
 
@@ -63,31 +83,31 @@ impl CameraController {
     }
 
     /// Called each frame to update position based on keyboard actions.
-    pub fn tick_keyboard(&mut self, game: &mut Game, keyboard: KeyboardState) {
-        self.tick_move(game, &keyboard);
-        self.tick_jump(game, &keyboard);
+    fn tick_keyboard(&mut self, game: &mut Game) {
+        self.tick_move(game);
+        self.tick_jump(game);
     }
 
-    fn tick_move(&mut self, game: &mut Game, keyboard: &KeyboardState) {
+    fn tick_move(&mut self, game: &mut Game) {
         let orient = game.player_ref().get::<Orient>().unwrap().0;
         let forward = Vec3A::from(self.direction(orient));
         let right = Vec3A::from(forward.cross(Vec3A::unit_y())).normalize();
 
         let mut vel = Vec3A::zero();
         let mut moved = false;
-        if keyboard.is_scancode_pressed(Scancode::W) {
+        if game.is_key_pressed(Keycode::W) {
             vel += KEYBOARD_SENSITIVITY * forward;
             moved = true;
         }
-        if keyboard.is_scancode_pressed(Scancode::S) {
+        if game.is_key_pressed(Keycode::S) {
             vel -= KEYBOARD_SENSITIVITY * forward;
             moved = true;
         }
-        if keyboard.is_scancode_pressed(Scancode::A) {
+        if game.is_key_pressed(Keycode::A) {
             vel += KEYBOARD_SENSITIVITY * right;
             moved = true;
         }
-        if keyboard.is_scancode_pressed(Scancode::D) {
+        if game.is_key_pressed(Keycode::D) {
             vel -= KEYBOARD_SENSITIVITY * right;
             moved = true;
         }
@@ -132,8 +152,8 @@ impl CameraController {
         game.player_ref().get_mut::<Pos>().unwrap().0 = new_pos;
     }
 
-    fn tick_jump(&mut self, game: &mut Game, keyboard: &KeyboardState) {
-        if keyboard.is_scancode_pressed(Scancode::Space)
+    fn tick_jump(&mut self, game: &mut Game) {
+        if game.is_key_pressed(Keycode::Space)
             && physics::is_on_ground(game.player_ref().get::<Pos>().unwrap().0, |pos| {
                 game.main_zone().block(pos) != Some(BlockId::new(blocks::Air))
             })
@@ -145,7 +165,7 @@ impl CameraController {
     }
 
     /// Returns the view-projection matrix that should be passed to shaders.
-    pub fn matrices(&mut self, game: &mut Game, aspect_ratio: f32) -> Matrices {
+    fn matrices(&mut self, game: &mut Game, aspect_ratio: f32) -> Matrices {
         let pos = game.player_ref().get::<Pos>().unwrap().0;
         let orient = game.player_ref().get::<Orient>().unwrap().0;
 

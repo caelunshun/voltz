@@ -8,7 +8,6 @@ use mesher::{ChunkMesher, GpuMesh};
 
 use crate::{
     asset::{shader::ShaderAsset, texture::TextureAsset, Assets},
-    camera::Matrices,
     event::{ChunkLoaded, ChunkUnloaded},
     game::Game,
 };
@@ -223,14 +222,11 @@ impl ChunkRenderer {
         }
     }
 
-    pub fn do_render<'a>(
-        &'a mut self,
-        pass: &mut wgpu::RenderPass<'a>,
-        _game: &mut Game,
-        matrices: Matrices,
-    ) {
+    pub fn do_render<'a>(&'a mut self, pass: &mut wgpu::RenderPass<'a>, game: &mut Game) {
         pass.set_pipeline(&self.pipeline);
         pass.set_bind_group(0, &self.bind_group, &[]);
+
+        let matrices = game.matrices();
 
         // Render each chunk.
         for (pos, mesh) in &self.chunks {

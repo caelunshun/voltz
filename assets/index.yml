@@ -5,3 +5,5 @@ groups:
     loader: Png
   shader_compiled/:
     loader: Spirv
+  font/:
+    loader: Font

@@ -1,12 +1,13 @@
-#![feature(type_name_of_val, allocator_api)]
+#![feature(type_name_of_val, allocator_api, format_args_capture)]
 #![allow(dead_code)]
 
-use std::{thread, time::Instant};
+use std::{alloc::System, thread, time::Instant};
 
 use anyhow::{anyhow, bail, Context};
-use asset::{model::YamlModel, shader::SpirvLoader, texture::PngLoader, Assets, YamlLoader};
+use asset::{
+    font::FontLoader, model::YamlModel, shader::SpirvLoader, texture::PngLoader, Assets, YamlLoader,
+};
 use bumpalo::Bump;
-use camera::CameraController;
 use common::{entity::Vel, Orient, Pos, SystemExecutor};
 use conn::Connection;
 use game::Game;
@@ -20,11 +21,10 @@ use protocol::{
     Bridge, PROTOCOL_VERSION,
 };
 use renderer::Renderer;
-use sdl2::{
-    event::Event, event::WindowEvent, keyboard::KeyboardState, video::Window, EventPump, Sdl,
-};
+use sdl2::{video::Window, EventPump, Sdl};
 use server::Server;
 use simple_logger::SimpleLogger;
+use utils::TrackAllocator;
 
 const PLAYER_BBOX: Aabb = Aabb {
     min: Vec3A::zero(),
@@ -34,23 +34,22 @@ const PLAYER_BBOX: Aabb = Aabb {
 mod asset;
 mod camera;
 mod conn;
+mod debug;
 mod entity;
 mod event;
 mod game;
+mod input;
 mod renderer;
+mod ui;
 mod update_server;
+
+#[global_allocator]
+pub static ALLOCATOR: TrackAllocator<System> = TrackAllocator::new(System);
 
 pub struct Client {
     assets: Assets,
-    renderer: Renderer,
-    camera: CameraController,
 
-    // SDL2 state
-    window: Window,
-    event_pump: EventPump,
     sdl: Sdl,
-
-    open: bool,
 
     game: Game,
     conn: Connection,
@@ -60,35 +59,14 @@ pub struct Client {
 
 impl Client {
     pub fn run(mut self) -> anyhow::Result<()> {
-        while self.open {
+        while !self.game.should_close() {
             let start = Instant::now();
             self.sdl.mouse().set_relative_mouse_mode(true);
-            self.handle_events();
             self.tick();
             let elapsed = start.elapsed();
             self.game.set_dt(elapsed.as_secs_f32());
         }
         Ok(())
-    }
-
-    fn handle_events(&mut self) {
-        self.camera
-            .tick_keyboard(&mut self.game, KeyboardState::new(&self.event_pump));
-        for event in self.event_pump.poll_iter() {
-            match event {
-                Event::Quit { .. } => self.open = false,
-                Event::Window { win_event, .. } => match win_event {
-                    WindowEvent::Resized(_, _) => self
-                        .renderer
-                        .on_resize(self.window.size().0, self.window.size().1),
-                    _ => (),
-                },
-                Event::MouseMotion { xrel, yrel, .. } => {
-                    self.camera.on_mouse_move(&mut self.game, xrel, yrel)
-                }
-                _ => (),
-            }
-        }
     }
 
     fn tick(&mut self) {
@@ -98,16 +76,6 @@ impl Client {
         self.systems.run(&mut self.game, |game, system| {
             game.events().set_system(system + 1)
         });
-
-        self.game.events().set_system(self.systems.len() + 1);
-        self.render();
-    }
-
-    fn render(&mut self) {
-        let (width, height) = self.window.size();
-        let aspect_ratio = width as f32 / height as f32;
-        let matrices = self.camera.matrices(&mut self.game, aspect_ratio);
-        self.renderer.render(&mut self.game, matrices);
     }
 }
 
@@ -119,24 +87,25 @@ fn main() -> anyhow::Result<()> {
     let (sdl, window, event_pump) =
         init_sdl2().map_err(|e| anyhow!("failed to initialize SDL2: {}", e))?;
     let renderer = Renderer::new(&window, &assets).context("failed to intiailize wgpu renderer")?;
-    let camera = CameraController::new();
 
     let bridge = launch_server()?;
     let (pos, orient, vel) = log_in(&bridge).context("failed to connect to integrated server")?;
     let conn = Connection::new(bridge.clone());
-    let game = Game::new(bridge, (pos, orient, vel, PLAYER_BBOX), Bump::new());
-    let systems = setup();
+    let game = Game::new(
+        bridge,
+        (pos, orient, vel, PLAYER_BBOX),
+        window,
+        event_pump,
+        Bump::new(),
+    );
+
+    let mut systems = setup(&assets)?;
+    systems.add(renderer);
 
     let client = Client {
         assets,
-        renderer,
-        camera,
 
-        window,
-        event_pump,
         sdl,
-
-        open: true,
 
         game,
         conn,
@@ -151,7 +120,8 @@ fn load_assets() -> anyhow::Result<Assets> {
     assets
         .add_loader("YamlModel", YamlLoader::<YamlModel>::new())
         .add_loader("Png", PngLoader::new())
-        .add_loader("Spirv", SpirvLoader::new());
+        .add_loader("Spirv", SpirvLoader::new())
+        .add_loader("Font", FontLoader::new());
     assets.load_dir("assets").context("failed to load assets")?;
     Ok(assets)
 }
@@ -224,11 +194,14 @@ fn log_in(bridge: &Bridge<ToServer>) -> anyhow::Result<(Pos, Orient, Vel)> {
     ))
 }
 
-fn setup() -> SystemExecutor<Game> {
+fn setup(assets: &Assets) -> anyhow::Result<SystemExecutor<Game>> {
     let mut systems = SystemExecutor::new();
 
+    input::setup(&mut systems);
+    camera::setup(&mut systems);
     entity::setup(&mut systems);
+    debug::setup(&mut systems, assets)?;
     update_server::setup(&mut systems);
 
-    systems
+    Ok(systems)
 }
