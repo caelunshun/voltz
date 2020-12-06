@@ -26,7 +26,7 @@ guillotiere = "0.6"
 anyhow = "1"
 thiserror = "1"
 ahash = "0.6"
-bumpalo = { path = "../../../bumpalo" }
+bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-api" }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.8"
 walkdir = "2"

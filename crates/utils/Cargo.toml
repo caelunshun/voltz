@@ -5,7 +5,7 @@ authors = ["caelunshun <caelunshun@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-bumpalo = { path = "../../../bumpalo" }
+bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-api" }
 serde = { version = "1", features = ["derive"] }
 glam = { version = "0.11", features = ["serde"] }
 

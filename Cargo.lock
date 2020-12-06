@@ -124,12 +124,13 @@ dependencies = [
 [[package]]
 name = "bumpalo"
 version = "3.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e8c087f005730276d1096a652e92a8bacee2e2472bcc9715a74d2bec38b5820"
 
 [[package]]
 name = "bumpalo"
 version = "3.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e8c087f005730276d1096a652e92a8bacee2e2472bcc9715a74d2bec38b5820"
+source = "git+https://github.com/caelunshun/bumpalo?branch=allocator-api#f400d10db95064f226aa51eff0766d6f49fc7b67"
 
 [[package]]
 name = "bytemuck"
@@ -197,7 +198,7 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.6.1",
  "anyhow",
- "bumpalo 3.4.0",
+ "bumpalo 3.4.0 (git+https://github.com/caelunshun/bumpalo?branch=allocator-api)",
  "bytemuck",
  "common",
  "crossbeam-queue",
@@ -1483,7 +1484,7 @@ name = "server"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bumpalo 3.4.0",
+ "bumpalo 3.4.0 (git+https://github.com/caelunshun/bumpalo?branch=allocator-api)",
  "common",
  "glam",
  "hashbrown 0.9.1 (git+https://github.com/rust-lang/hashbrown)",
@@ -1724,7 +1725,7 @@ checksum = "f14ee04d9415b52b3aeab06258a3f07093182b88ba0f9b8d203f211a7a7d41c7"
 name = "utils"
 version = "0.1.0"
 dependencies = [
- "bumpalo 3.4.0",
+ "bumpalo 3.4.0 (git+https://github.com/caelunshun/bumpalo?branch=allocator-api)",
  "glam",
  "rand",
  "rand_pcg",
@@ -1976,7 +1977,7 @@ dependencies = [
 name = "worldgen"
 version = "0.1.0"
 dependencies = [
- "bumpalo 3.4.0",
+ "bumpalo 3.4.0 (git+https://github.com/caelunshun/bumpalo?branch=allocator-api)",
  "common",
  "packed_simd_2",
  "rayon",

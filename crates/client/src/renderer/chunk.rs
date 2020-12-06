@@ -231,7 +231,7 @@ impl ChunkRenderer {
         let matrices = game.matrices();
 
         // Render each chunk.
-        for (pos, mesh) in &self.chunks {
+        for (pos, mesh) in self.chunks.iter().rev() {
             pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
 
             #[derive(Copy, Clone, bytemuck::Zeroable, bytemuck::Pod)]

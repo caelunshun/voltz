@@ -8,7 +8,7 @@ edition = "2018"
 common = { path = "../common" }
 utils = { path = "../utils" }
 
-bumpalo = { path = "../../../bumpalo" }
+bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-api" }
 rayon = "1"
 simdnoise = { git = "https://github.com/jackmott/rust-simd-noise" }
 simd = { package = "packed_simd_2", version = "0.3" }
