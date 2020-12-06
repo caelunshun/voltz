@@ -31,9 +31,15 @@ struct CameraSystem {
 impl System<Game> for CameraSystem {
     fn run(&mut self, game: &mut Game) {
         self.tick_keyboard(game);
-        let event = game.events().iter::<MouseMoved>().next().copied();
-        if let Some(event) = event {
-            self.on_mouse_move(game, event.xrel, event.yrel);
+
+        let mut dx = 0;
+        let mut dy = 0;
+        for event in game.events().iter::<MouseMoved>() {
+            dx += event.xrel;
+            dy += event.yrel;
+        }
+        if dx != 0 || dy != 0 {
+            self.on_mouse_move(game, dx, dy);
         }
 
         // Update matrices

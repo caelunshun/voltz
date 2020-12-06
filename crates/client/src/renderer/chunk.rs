@@ -220,6 +220,8 @@ impl ChunkRenderer {
                 );
             }
         }
+
+        game.debug_data.render_chunks = self.chunks.len();
     }
 
     pub fn do_render<'a>(&'a mut self, pass: &mut wgpu::RenderPass<'a>, game: &mut Game) {

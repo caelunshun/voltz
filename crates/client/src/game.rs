@@ -9,7 +9,7 @@ use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;
 use sdl2::{keyboard::Keycode, video::Window, EventPump};
 
-use crate::{camera::Matrices, ui::UiStore};
+use crate::{camera::Matrices, debug::DebugData, ui::UiStore};
 
 /// Uberstruct containing the game state. Includes zones, entities,
 /// blocks, etc.
@@ -44,11 +44,11 @@ pub struct Game {
     /// Time in seconds since the previous frame.
     dt: f32,
 
-    /// The window.
-    window: Window,
-
     /// The SDL2 event pump.
     event_pump: RefCell<EventPump>,
+
+    /// The window.
+    window: Window,
 
     /// The set of pressed keys.
     pressed_keys: AHashSet<Keycode>,
@@ -60,6 +60,8 @@ pub struct Game {
     matrices: Matrices,
 
     closed: Cell<bool>,
+
+    pub debug_data: DebugData,
 }
 
 impl Game {
@@ -105,6 +107,7 @@ impl Game {
             ui_store,
             matrices,
             closed: Cell::new(false),
+            debug_data: Default::default(),
         }
     }
 

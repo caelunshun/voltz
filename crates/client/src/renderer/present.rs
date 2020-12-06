@@ -17,7 +17,7 @@ impl Presenter {
             format: SC_FORMAT,
             width,
             height,
-            present_mode: wgpu::PresentMode::Fifo,
+            present_mode: wgpu::PresentMode::Immediate,
         };
         let sc = device.create_swap_chain(&surface, &sc_desc);
 

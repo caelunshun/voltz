@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
-use common::System;
+use common::{System, SystemExecutor};
 use futures_executor::block_on;
 use present::Presenter;
 use sdl2::video::Window;
@@ -118,6 +118,11 @@ impl Renderer {
             ui_renderer,
             presenter,
         })
+    }
+
+    pub fn setup(self, systems: &mut SystemExecutor<Game>, game: &mut Game) {
+        game.debug_data.adapter = Some(self.resources.adapter().get_info());
+        systems.add(self);
     }
 
     fn on_resize(&mut self, new_width: u32, new_height: u32) {

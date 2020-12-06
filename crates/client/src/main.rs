@@ -49,12 +49,12 @@ pub static ALLOCATOR: TrackAllocator<System> = TrackAllocator::new(System);
 pub struct Client {
     assets: Assets,
 
-    sdl: Sdl,
-
-    game: Game,
-    conn: Connection,
-
     systems: SystemExecutor<Game>,
+
+    sdl: Sdl,
+    game: Game,
+
+    conn: Connection,
 }
 
 impl Client {
@@ -91,7 +91,7 @@ fn main() -> anyhow::Result<()> {
     let bridge = launch_server()?;
     let (pos, orient, vel) = log_in(&bridge).context("failed to connect to integrated server")?;
     let conn = Connection::new(bridge.clone());
-    let game = Game::new(
+    let mut game = Game::new(
         bridge,
         (pos, orient, vel, PLAYER_BBOX),
         window,
@@ -100,7 +100,7 @@ fn main() -> anyhow::Result<()> {
     );
 
     let mut systems = setup(&assets)?;
-    systems.add(renderer);
+    renderer.setup(&mut systems, &mut game);
 
     let client = Client {
         assets,

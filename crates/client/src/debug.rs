@@ -1,6 +1,6 @@
 //! The debug screen (F3)
 
-use common::{event::EventBus, Pos, System, SystemExecutor};
+use common::{event::EventBus, Orient, Pos, System, SystemExecutor};
 use fontdue::Font;
 use glam::Vec2;
 use protocol::PROTOCOL_VERSION;
@@ -14,6 +14,12 @@ use crate::{
     ui::Length,
     ALLOCATOR,
 };
+
+#[derive(Default)]
+pub struct DebugData {
+    pub adapter: Option<wgpu::AdapterInfo>,
+    pub render_chunks: usize,
+}
 
 pub fn setup(systems: &mut SystemExecutor<Game>, assets: &Assets) -> anyhow::Result<()> {
     let font = assets.get("font/Play-Regular.ttf")?;
@@ -44,13 +50,47 @@ impl DebugSystem {
 
         let pos = game.player_ref().get::<Pos>().unwrap().0;
         let [posx, posy, posz] = [pos.x, pos.y, pos.z];
+        let orient = game.player_ref().get::<Orient>().unwrap().0;
+        let [orientx, orienty] = [orient.x, orient.y];
 
         let memory = utils::format_bytes(ALLOCATOR.allocated() as u64);
 
+        let (adapter, backend) = game
+            .debug_data
+            .adapter
+            .as_ref()
+            .map(|info| {
+                let backend = match info.backend {
+                    wgpu::Backend::Empty => "Empty",
+                    wgpu::Backend::Vulkan => "Vulkan",
+                    wgpu::Backend::Metal => "Metal",
+                    wgpu::Backend::Dx12 => "DirectX 12",
+                    wgpu::Backend::Dx11 => "DirectX 11",
+                    wgpu::Backend::Gl => "OpenGL",
+                    wgpu::Backend::BrowserWebGpu => "WebGPU",
+                };
+                (info.name.as_str(), backend)
+            })
+            .unwrap_or_else(|| ("unknown", "Unknown"));
+
+        let dt = game.dt() * 1000.;
+
+        let loaded_chunks = game.main_zone().len();
+        let render_chunks = game.debug_data.render_chunks;
+
         indoc::formatdoc! {"
-            Voltz v{version} - protocol {protocol}
-            Position: {posx:.2}, {posy:.2}, {posz:.2}
+            Voltz v{version}, protocol {protocol}
+            X: {posx:.2}, Y: {posy:.2}, Z: {posz:.2}
+            Yaw: {orientx:.2}, Pitch: {orienty:.2}
+
+            Adapter: {adapter}
+            Backend: {backend}
+
+            Chunks loaded: {loaded_chunks}
+            Chunks rendering: {render_chunks}
             Used memory: {memory}
+
+            Frame time: {dt:.2}ms
         "}
     }
 }
@@ -69,7 +109,7 @@ impl System<Game> for DebugSystem {
             );
             let text = self.text(game);
             ui.build()
-                .push(Text::new(&text, self.font.as_arc()).size(20.));
+                .push(Text::new(&text, self.font.as_arc()).size(30.));
         }
     }
 }

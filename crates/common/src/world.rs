@@ -338,6 +338,11 @@ impl SparseZone {
         Self::default()
     }
 
+    /// Gets the number of chunks.
+    pub fn len(&self) -> usize {
+        self.chunks.len()
+    }
+
     /// Gets the chunk at `pos`.
     pub fn chunk(&self, pos: ChunkPos) -> Option<&Chunk> {
         self.chunks.get(&pos)
