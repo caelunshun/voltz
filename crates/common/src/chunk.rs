@@ -102,14 +102,25 @@ impl Chunk {
 
     /// Gets the palette of blocks, which is the set of all distinct blocks
     /// within this chunk.
+    #[inline]
     pub fn palette(&self) -> &[BlockId] {
         &self.palette
+    }
+
+    /// Returns whether this chunk is empty, i.e. if it
+    /// contains only air.
+    ///
+    /// Only a heuristic; false negatives are possible (but
+    /// false positives are not).
+    pub fn is_empty(&self) -> bool {
+        self.palette.is_empty() || self.palette == [BlockId::new(blocks::Air)]
     }
 
     /// Gets the packed array of indexes into [`palette()`]
     ///
     /// Ordering: slices from Y=0 to Y=15, each containg slices
     /// from Z=0 to Z=15, each of which contains blocks from X=0 to X=15.
+    #[inline]
     pub fn indexes(&self) -> &PackedArray {
         &self.indexes
     }
@@ -136,13 +147,15 @@ impl Chunk {
         }
     }
 
+    #[inline]
     fn check_bounds(x: usize, y: usize, z: usize) {
         assert!(x < CHUNK_DIM, "x coordinate {} out of bounds", x);
         assert!(y < CHUNK_DIM, "y coordinate {} out of bounds", y);
         assert!(z < CHUNK_DIM, "z coordinate {} out of bounds", z);
     }
 
-    fn ordinal(x: usize, y: usize, z: usize) -> usize {
+    #[inline]
+    pub fn ordinal(x: usize, y: usize, z: usize) -> usize {
         (y * CHUNK_DIM * CHUNK_DIM) + (z * CHUNK_DIM) + x
     }
 }

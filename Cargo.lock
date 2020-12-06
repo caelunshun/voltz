@@ -198,6 +198,8 @@ version = "0.1.0"
 dependencies = [
  "ahash 0.6.1",
  "anyhow",
+ "arrayvec",
+ "bitflags",
  "bumpalo 3.4.0 (git+https://github.com/caelunshun/bumpalo?branch=allocator-api)",
  "bytemuck",
  "common",

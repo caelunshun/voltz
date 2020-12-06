@@ -32,6 +32,8 @@ serde_yaml = "0.8"
 walkdir = "2"
 bytemuck = { version = "1", features = ["derive"] }
 indoc = "1"
+bitflags = "1"
+arrayvec = "0.5"
 
 rand = "0.7"
 rand_pcg = "0.2"

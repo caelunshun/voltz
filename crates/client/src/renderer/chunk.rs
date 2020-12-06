@@ -16,6 +16,7 @@ use self::mesher::RawVertex;
 
 use super::{utils::TextureArray, Resources, DEPTH_FORMAT, SAMPLE_COUNT, SC_FORMAT};
 
+mod cull;
 mod mesher;
 
 /// The chunk renderer. Responsible for
