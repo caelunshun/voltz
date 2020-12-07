@@ -35,6 +35,7 @@ indoc = "1"
 bitflags = "1"
 arrayvec = "0.5"
 hashbrown = { git = "https://github.com/rust-lang/hashbrown", features = ["nightly"] }
+path-slash = "0.1"
 
 rand = "0.7"
 rand_pcg = "0.2"

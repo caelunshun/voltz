@@ -1,10 +1,18 @@
 use std::{
-    any::type_name, any::type_name_of_val, any::Any, collections::HashMap, fs, marker::PhantomData,
-    ops::Deref, path::Path, sync::Arc,
+    any::type_name,
+    any::type_name_of_val,
+    any::Any,
+    collections::HashMap,
+    fs,
+    marker::PhantomData,
+    ops::Deref,
+    path::{Path, PathBuf},
+    sync::Arc,
 };
 
 use ahash::AHashMap;
 use anyhow::{anyhow, Context};
+use path_slash::PathExt;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use walkdir::WalkDir;
 
@@ -150,8 +158,11 @@ impl Assets {
             let asset = loader
                 .load(&bytes)
                 .with_context(|| format!("failed to load '{}'", path.display()))?;
-            let path = path.strip_prefix(directory)?;
-            assets.push((path.to_path_buf(), asset));
+            let path = path
+                .strip_prefix(directory)?
+                .to_slash()
+                .ok_or_else(|| anyhow!("failed to make slashed path"))?;
+            assets.push((PathBuf::from(path), asset));
         }
 
         for (path, asset) in assets {
