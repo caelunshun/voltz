@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, mem::size_of, sync::Arc, time::Instant};
+use std::{collections::BTreeMap, mem::size_of, sync::Arc};
 
 use ahash::{AHashMap, AHashSet};
 use anyhow::{bail, Context};
@@ -237,11 +237,10 @@ impl ChunkRenderer {
         let player_chunk = ChunkPos::from_pos(pos);
 
         // Render each chunk.
+        self.culler.update(player_chunk, game.bump());
+        let visible = self.culler.visible_chunks();
+
         let mut count = 0;
-        let start = Instant::now();
-        let visible = self.culler.visible_chunks(player_chunk, game.bump());
-        log::debug!("Cull took {:?}", start.elapsed());
-        let start = Instant::now();
         for pos in visible {
             let mesh = match self.chunks.get(&pos) {
                 Some(m) => m,
@@ -276,8 +275,6 @@ impl ChunkRenderer {
             pass.draw(0..mesh.vertex_count, 0..1);
             count += 1;
         }
-        log::debug!("Draw recording took {:?}", start.elapsed());
-
         game.debug_data.render_chunks = count;
     }
 }

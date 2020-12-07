@@ -25,6 +25,8 @@ use utils::BitSet;
 #[derive(Default)]
 pub struct Culler {
     chunks: AHashMap<ChunkPos, ChunkVisibility>,
+    chunks_updated: bool,
+    previous_root: ChunkPos,
     visible: AHashSet<ChunkPos>,
     task_queue: Arc<SegQueue<(ChunkPos, ChunkVisibility)>>,
 }
@@ -37,6 +39,7 @@ impl Culler {
     pub fn on_chunk_loaded(&mut self, pos: ChunkPos, chunk: &Chunk) {
         if chunk.is_empty() {
             self.chunks.insert(pos, full_visibility());
+            self.chunks_updated = true;
         } else {
             let chunk = chunk.clone();
             let task_queue = Arc::clone(&self.task_queue);
@@ -53,22 +56,26 @@ impl Culler {
 
     pub fn on_chunk_unloaded(&mut self, pos: ChunkPos) {
         self.chunks.remove(&pos);
+        self.chunks_updated = true;
         log::trace!("Removed visibility for {:?}", pos);
     }
 
-    pub fn visible_chunks<'a>(
-        &'a mut self,
-        player_pos: ChunkPos,
-        bump: &Bump,
-    ) -> impl Iterator<Item = ChunkPos> + 'a {
-        self.poll_tasks();
-        self.estimate_visible_set(player_pos, bump);
+    pub fn visible_chunks<'a>(&'a self) -> impl Iterator<Item = ChunkPos> + 'a {
         self.visible.iter().copied()
+    }
+
+    pub fn update(&mut self, player_pos: ChunkPos, bump: &Bump) {
+        self.poll_tasks();
+        if self.chunks_updated {
+            self.estimate_visible_set(player_pos, bump);
+            self.chunks_updated = false;
+        }
     }
 
     fn poll_tasks(&mut self) {
         while let Some((pos, vis)) = self.task_queue.pop() {
             self.chunks.insert(pos, vis);
+            self.chunks_updated = true;
             log::trace!("Computed visibility for {:?}", pos);
         }
     }
