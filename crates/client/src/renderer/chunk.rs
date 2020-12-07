@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, mem::size_of, sync::Arc};
+use std::{mem::size_of, sync::Arc};
 
 use ahash::{AHashMap, AHashSet};
 use anyhow::{bail, Context};
@@ -33,7 +33,7 @@ pub struct ChunkRenderer {
     mesher: ChunkMesher,
     culler: Culler,
 
-    chunks: BTreeMap<ChunkPos, GpuMesh>,
+    chunks: AHashMap<ChunkPos, GpuMesh>,
     pending_meshes: AHashSet<ChunkPos>,
 
     pipeline: wgpu::RenderPipeline,
@@ -179,7 +179,7 @@ impl ChunkRenderer {
             block_sampler,
             mesher,
             culler: Culler::new(),
-            chunks: BTreeMap::new(),
+            chunks: AHashMap::new(),
             pending_meshes: AHashSet::new(),
             pipeline,
             bind_group,

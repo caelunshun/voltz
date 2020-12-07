@@ -157,6 +157,7 @@ impl Renderer {
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                     label: Some("render_frame"),
                 });
+
         let frame = self
             .presenter
             .swapchain()
