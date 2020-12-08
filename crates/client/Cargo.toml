@@ -34,7 +34,7 @@ bytemuck = { version = "1", features = ["derive"] }
 indoc = "1"
 bitflags = "1"
 arrayvec = "0.5"
-hashbrown = { git = "https://github.com/rust-lang/hashbrown", features = ["nightly"] }
+hashbrown = { git = "https://github.com/caelunshun/hashbrown", branch = "rename-allocator", features = ["nightly"] }
 path-slash = "0.1"
 
 rand = "0.7"

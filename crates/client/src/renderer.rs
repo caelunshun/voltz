@@ -17,7 +17,7 @@ mod utils;
 
 const SC_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Bgra8UnormSrgb;
 const DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24Plus;
-const SAMPLE_COUNT: u32 = 8;
+const SAMPLE_COUNT: u32 = 2;
 
 #[derive(Debug)]
 pub struct Resources {

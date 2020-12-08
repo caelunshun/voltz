@@ -1,5 +1,5 @@
 use std::{
-    alloc::{AllocRef, Global},
+    alloc::{Allocator, Global},
     iter,
 };
 
@@ -7,7 +7,7 @@ use std::{
 ///
 /// Capacity is rounded up to the next multiple of 64.
 #[derive(Debug, Clone)]
-pub struct BitSet<A: AllocRef = Global> {
+pub struct BitSet<A: Allocator = Global> {
     values: Vec<u64, A>,
 }
 
@@ -24,7 +24,7 @@ impl BitSet<Global> {
 
 impl<A> BitSet<A>
 where
-    A: AllocRef,
+    A: Allocator,
 {
     /// Creates a new bitset with the given capacity.
     ///

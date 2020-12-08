@@ -130,7 +130,7 @@ checksum = "2e8c087f005730276d1096a652e92a8bacee2e2472bcc9715a74d2bec38b5820"
 [[package]]
 name = "bumpalo"
 version = "3.4.0"
-source = "git+https://github.com/caelunshun/bumpalo?branch=allocator-api#f400d10db95064f226aa51eff0766d6f49fc7b67"
+source = "git+https://github.com/caelunshun/bumpalo?branch=allocator-api#6b12ff4a178ab7d9f7f14909d589f9767d900a13"
 
 [[package]]
 name = "bytemuck"
@@ -208,7 +208,7 @@ dependencies = [
  "futures-executor",
  "glam",
  "guillotiere",
- "hashbrown 0.9.1 (git+https://github.com/rust-lang/hashbrown)",
+ "hashbrown 0.9.1 (git+https://github.com/caelunshun/hashbrown?branch=rename-allocator)",
  "hecs",
  "image",
  "indoc",
@@ -243,7 +243,7 @@ dependencies = [
  "block",
  "cocoa-foundation",
  "core-foundation 0.9.1",
- "core-graphics 0.22.1",
+ "core-graphics 0.22.2",
  "foreign-types",
  "libc",
  "objc",
@@ -357,9 +357,9 @@ dependencies = [
 
 [[package]]
 name = "core-graphics"
-version = "0.22.1"
+version = "0.22.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc239bba52bab96649441699533a68de294a101533b0270b2d65aa402b29a7f9"
+checksum = "269f35f69b542b80e736a20a89a05215c0ce80c2c03c514abb2e318b78379d86"
 dependencies = [
  "bitflags",
  "core-foundation 0.9.1",
@@ -922,7 +922,7 @@ dependencies = [
 [[package]]
 name = "hashbrown"
 version = "0.9.1"
-source = "git+https://github.com/rust-lang/hashbrown#b2266389e4a23511a1130f7a301a884edf55645b"
+source = "git+https://github.com/caelunshun/hashbrown?branch=rename-allocator#b6daaf0158e00db8ca05a898ba0194dbe9ef9c05"
 dependencies = [
  "ahash 0.4.6",
 ]
@@ -1063,9 +1063,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.80"
+version = "0.2.81"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d58d1b70b004888f764dfbf6a26a3b0342a1632d33968e4a179d8011c760614"
+checksum = "1482821306169ec4d07f6aca392a4681f66c75c9918aa49641a2595db64053cb"
 
 [[package]]
 name = "libloading"
@@ -1485,9 +1485,9 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 
 [[package]]
 name = "png"
-version = "0.16.7"
+version = "0.16.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dfe7f9f1c730833200b134370e1d5098964231af8450bce9b78ee3ab5278b970"
+checksum = "3c3287920cb847dee3de33d301c463fba14dda99db24214ddf93f83d3021f4c6"
 dependencies = [
  "bitflags",
  "crc32fast",
@@ -1737,7 +1737,7 @@ dependencies = [
  "bumpalo 3.4.0 (git+https://github.com/caelunshun/bumpalo?branch=allocator-api)",
  "common",
  "glam",
- "hashbrown 0.9.1 (git+https://github.com/rust-lang/hashbrown)",
+ "hashbrown 0.9.1 (git+https://github.com/caelunshun/hashbrown?branch=rename-allocator)",
  "hecs",
  "log",
  "protocol",
@@ -1868,9 +1868,9 @@ checksum = "8fb1df15f412ee2e9dfc1c504260fa695c1c3f10fe9f4a6ee2d2184d7d6450e2"
 
 [[package]]
 name = "syn"
-version = "1.0.53"
+version = "1.0.54"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8833e20724c24de12bbaba5ad230ea61c3eafb05b881c7c9d3cfe8638b187e68"
+checksum = "9a2af957a63d6bd42255c359c93d9bfdb97076bd3b820897ce55ffbfbf107f44"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2238,7 +2238,7 @@ dependencies = [
  "bitflags",
  "cocoa",
  "core-foundation 0.9.1",
- "core-graphics 0.22.1",
+ "core-graphics 0.22.2",
  "core-video-sys",
  "dispatch",
  "instant",

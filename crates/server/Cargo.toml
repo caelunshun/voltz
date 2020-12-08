@@ -21,7 +21,7 @@ hecs = "0.3"
 anyhow = "1"
 bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-api" }
 glam = "0.11"
-hashbrown = { git = "https://github.com/rust-lang/hashbrown", features = ["nightly"] }
+hashbrown = { git = "https://github.com/caelunshun/hashbrown", branch = "rename-allocator", features = ["nightly"] }
 rayon = "1"
 
 rand = "0.7"

@@ -2,7 +2,7 @@
 //! of UIs to be positioned on the screen
 //! and rendered.
 
-use std::alloc::AllocRef;
+use std::alloc::Allocator;
 
 use ahash::AHashMap;
 use glam::Vec2;
@@ -60,7 +60,7 @@ impl UiStore {
     /// Finishes the current frame, removing any UIs
     /// which were not accessed. Writes UI render data
     /// to `output`.
-    pub fn finish_frame<'a, A: AllocRef>(&'a mut self, output: &mut Vec<UiRenderData<'a>, A>) {
+    pub fn finish_frame<'a, A: Allocator>(&'a mut self, output: &mut Vec<UiRenderData<'a>, A>) {
         self.uis.retain(|&name, stored| {
             if !stored.accessed {
                 log::debug!("Removing UI '{}'", name);
