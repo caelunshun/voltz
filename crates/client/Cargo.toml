@@ -15,7 +15,7 @@ voltzui = { path = "../ui" }
 hecs = { version = "0.3", features = ["macros"] }
 
 wgpu = "0.6"
-winit = { version = "0.23", default-features = false, features = ["x11"] }
+winit = { version = "0.24", default-features = false, features = ["x11"] }
 glam = { version = "0.11", features = ["bytemuck"] }
 splines = { version = "3", features = ["impl-glam"] }
 fontdue = { git = "https://github.com/mooman219/fontdue" }
@@ -34,7 +34,7 @@ bytemuck = { version = "1", features = ["derive"] }
 indoc = "1"
 bitflags = "1"
 arrayvec = "0.5"
-hashbrown = { git = "https://github.com/caelunshun/hashbrown", branch = "rename-allocator", features = ["nightly"] }
+hashbrown = { git = "https://github.com/rust-lang/hashbrown", features = ["nightly"] }
 path-slash = "0.1"
 
 rand = "0.7"
