@@ -7,8 +7,13 @@ edition = "2018"
 [dependencies]
 common = { path = "../common" }
 utils = { path = "../utils" }
-
+wgpu = "0.6"
+bytemuck = { version = "1", features = ["derive"] }
 bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-api" }
-rayon = "1"
-simdnoise = { git = "https://github.com/jackmott/rust-simd-noise" }
-simd = { package = "packed_simd_2", version = "0.3" }
+anyhow = "1"
+rand = "0.7"
+
+[dev-dependencies]
+image = { version = "0.23", default-features = false, features = ["png"] }
+futures-executor = "0.3"
+renderdoc = "0.9"

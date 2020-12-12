@@ -6,6 +6,7 @@ pub mod block;
 pub mod chunk;
 pub mod entity;
 pub mod event;
+pub mod gpu;
 pub mod system;
 pub mod world;
 

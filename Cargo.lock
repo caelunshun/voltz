@@ -288,6 +288,7 @@ dependencies = [
  "ahash 0.6.1",
  "anyhow",
  "block-macros",
+ "futures-executor",
  "glam",
  "hecs",
  "log",
@@ -297,6 +298,7 @@ dependencies = [
  "thiserror",
  "utils",
  "uuid",
+ "wgpu",
 ]
 
 [[package]]
@@ -548,6 +550,15 @@ name = "euclid"
 version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5337024b8293bdce5265dc9570ef6e608a34bfacbbc87fe1a5dcb5f1dac2f4e2"
+dependencies = [
+ "num-traits",
+]
+
+[[package]]
+name = "float-cmp"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1267f4ac4f343772758f7b1bdcbe767c218bbab93bb432acbf5162bbf85a6c4"
 dependencies = [
  "num-traits",
 ]
@@ -1372,16 +1383,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13bd41f508810a131401606d54ac32a467c97172d74ba7662562ebba5ad07fa0"
 
 [[package]]
-name = "packed_simd_2"
-version = "0.3.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3278e0492f961fd4ae70909f56b2723a7e8d01a228427294e19cdfdebda89a17"
-dependencies = [
- "cfg-if 0.1.10",
- "libm",
-]
-
-[[package]]
 name = "parking_lot"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1404,25 +1405,6 @@ dependencies = [
  "redox_syscall",
  "smallvec",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "paste"
-version = "0.1.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "45ca20c77d80be666aef2b45486da86238fabe33e38306bd3118fe4af33fa880"
-dependencies = [
- "paste-impl",
- "proc-macro-hack",
-]
-
-[[package]]
-name = "paste-impl"
-version = "0.1.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d95a7db200b97ef370c8e6de0088252f7e0dfff7d047a28528e47456c0fc98b6"
-dependencies = [
- "proc-macro-hack",
 ]
 
 [[package]]
@@ -1674,6 +1656,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41cc0f7e4d5d4544e8861606a285bb08d3e70712ccc7d2b84d7c0ccfaf4b05ce"
 
 [[package]]
+name = "renderdoc"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f084dd613b0ac0d206540f11f32e9627322479005733b17cc0c346afc2ec6e1a"
+dependencies = [
+ "bitflags",
+ "float-cmp",
+ "libloading",
+ "once_cell",
+ "renderdoc-sys",
+ "winapi 0.3.9",
+ "wio",
+]
+
+[[package]]
+name = "renderdoc-sys"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f1382d1f0a252c4bf97dc20d979a2fdd05b024acd7c2ed0f7595d7817666a157"
+
+[[package]]
 name = "safe_arch"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1745,24 +1748,6 @@ dependencies = [
  "rand_pcg",
  "rayon",
  "worldgen",
-]
-
-[[package]]
-name = "simdeez"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1893a4b8db694e23889b63229b6e1deb33846ee0552588bb6e45e53eff59667d"
-dependencies = [
- "cfg-if 0.1.10",
- "paste",
-]
-
-[[package]]
-name = "simdnoise"
-version = "3.1.6"
-source = "git+https://github.com/jackmott/rust-simd-noise#1d04fd8cbe99323c088610bba803269614238906"
-dependencies = [
- "simdeez",
 ]
 
 [[package]]
@@ -2271,12 +2256,16 @@ dependencies = [
 name = "worldgen"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bumpalo 3.4.0 (git+https://github.com/caelunshun/bumpalo?branch=allocator-api)",
+ "bytemuck",
  "common",
- "packed_simd_2",
- "rayon",
- "simdnoise",
+ "futures-executor",
+ "image",
+ "rand",
+ "renderdoc",
  "utils",
+ "wgpu",
 ]
 
 [[package]]
