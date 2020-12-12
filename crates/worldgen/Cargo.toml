@@ -12,6 +12,7 @@ bytemuck = { version = "1", features = ["derive"] }
 bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-api" }
 anyhow = "1"
 rand = "0.7"
+rand_pcg = "0.2"
 
 [dev-dependencies]
 image = { version = "0.23", default-features = false, features = ["png"] }

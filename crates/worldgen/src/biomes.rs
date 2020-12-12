@@ -7,7 +7,9 @@
 //! to map integers to biomes. The final result is an array of biomes.
 
 use bytemuck::{Pod, Zeroable};
-use std::{iter, mem::size_of, sync::Arc};
+use rand::{Rng, SeedableRng};
+use rand_pcg::Pcg64Mcg;
+use std::{mem::size_of, sync::Arc};
 
 pub const BIOME_GRID_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::R8Uint;
 const INITIAL_GRID_SIZE: u32 = 16;
@@ -19,14 +21,14 @@ struct PushConstants {
     offset: [u32; 2],
 }
 
-pub struct BiomeBundle<'a> {
-    bundle: SequenceBundle<'a>,
+pub struct BiomeBundle {
+    bundle: SequenceBundle,
     push_constants: PushConstants,
 }
 
-impl BiomeBundle<'_> {
+impl BiomeBundle {
     pub fn output_size(&self) -> u32 {
-        self.last_stage().stage.output_dimensions
+        self.last_stage().output_dimensions
     }
 
     pub fn output_texture(&self) -> &wgpu::Texture {
@@ -54,10 +56,15 @@ impl BiomeGenerator {
         }
     }
 
-    pub fn prepare<'a>(&'a self, device: &'a wgpu::Device, seed: u32) -> BiomeBundle {
-        let bundle = self
-            .sequence
-            .create_bundle(device, &self.pipelines.bg_layout);
+    pub fn prepare<'a>(
+        &'a self,
+        device: &'a wgpu::Device,
+        seed: u32,
+        max_output_size: u32,
+    ) -> BiomeBundle {
+        let bundle =
+            self.sequence
+                .create_bundle(device, &self.pipelines.bg_layout, max_output_size);
         let push_constants = PushConstants {
             seed,
             offset: [0, 0],
@@ -70,7 +77,7 @@ impl BiomeGenerator {
 
     pub fn execute<'a>(
         &self,
-        bundle: &'a BiomeBundle<'a>,
+        bundle: &'a BiomeBundle,
         pass: &mut wgpu::ComputePass<'a>,
         queue: &wgpu::Queue,
     ) {
@@ -80,11 +87,10 @@ impl BiomeGenerator {
             &bundle.bundle.input_texture,
         );
         for stage in &bundle.bundle.stages {
-            pass.set_pipeline(&stage.stage.pipeline);
+            pass.set_pipeline(&stage.pipeline);
             pass.set_push_constants(0, bytemuck::cast_slice(&[bundle.push_constants]));
             pass.set_bind_group(0, &stage.bind_group, &[]);
-            let [x, y] =
-                self.dispatch_size(stage.stage.work_group_size, stage.stage.output_dimensions);
+            let [x, y] = self.dispatch_size(stage.work_group_size, stage.output_dimensions);
             pass.dispatch(x, y, 1);
         }
     }
@@ -147,13 +153,12 @@ impl BiomeGenerator {
         );
     }
 
-    fn generate_initial_grid<'a>(&self, _seed: u32) -> Vec<u8> {
-        let mut grid = Vec::new();
-        grid.extend(iter::repeat(0u8).take(INITIAL_GRID_SIZE.pow(2) as usize));
-
+    fn generate_initial_grid<'a>(&self, seed: u32) -> Vec<u8> {
+        let mut grid = vec![0u8; (INITIAL_GRID_SIZE * INITIAL_GRID_SIZE) as usize];
+        let mut rng = Pcg64Mcg::seed_from_u64(seed as u64);
         for x in 0..INITIAL_GRID_SIZE {
             for y in 0..INITIAL_GRID_SIZE {
-                let value = rand::random::<bool>() as u8;
+                let value = rng.gen::<bool>() as u8;
                 grid[(y * INITIAL_GRID_SIZE + x) as usize] = value;
             }
         }
@@ -288,8 +293,9 @@ impl Sequence {
         &'a self,
         device: &'a wgpu::Device,
         bg_layout: &'a wgpu::BindGroupLayout,
-    ) -> SequenceBundle<'a> {
-        SequenceBundleEncoder::new(self, device, bg_layout).encode()
+        max_size: u32,
+    ) -> SequenceBundle {
+        SequenceBundleEncoder::new(self, device, bg_layout, max_size).encode()
     }
 }
 
@@ -388,22 +394,25 @@ impl<'a> SequenceEncoder<'a> {
     }
 }
 
-struct PreparedStage<'a> {
-    stage: &'a EncodedStage,
+struct PreparedStage {
+    pipeline: Arc<wgpu::ComputePipeline>,
+    output_dimensions: u32,
+    work_group_size: [u32; 2],
     output_texture: wgpu::Texture,
     bind_group: wgpu::BindGroup,
 }
 
-struct SequenceBundle<'a> {
+struct SequenceBundle {
     input_texture: wgpu::Texture,
-    stages: Vec<PreparedStage<'a>>,
+    stages: Vec<PreparedStage>,
 }
 
 struct SequenceBundleEncoder<'a> {
     sequence: &'a Sequence,
-    bundle: SequenceBundle<'a>,
+    bundle: SequenceBundle,
     device: &'a wgpu::Device,
     bg_layout: &'a wgpu::BindGroupLayout,
+    max_dimensions: u32,
 }
 
 impl<'a> SequenceBundleEncoder<'a> {
@@ -411,6 +420,7 @@ impl<'a> SequenceBundleEncoder<'a> {
         sequence: &'a Sequence,
         device: &'a wgpu::Device,
         bg_layout: &'a wgpu::BindGroupLayout,
+        max_dimensions: u32,
     ) -> Self {
         let input_texture = Self::create_input_texture(device);
         Self {
@@ -421,6 +431,7 @@ impl<'a> SequenceBundleEncoder<'a> {
             },
             device,
             bg_layout,
+            max_dimensions,
         }
     }
 
@@ -430,7 +441,7 @@ impl<'a> SequenceBundleEncoder<'a> {
         device.create_texture(&desc)
     }
 
-    pub fn encode(mut self) -> SequenceBundle<'a> {
+    pub fn encode(mut self) -> SequenceBundle {
         self.prepare_stages();
 
         self.bundle
@@ -443,12 +454,15 @@ impl<'a> SequenceBundleEncoder<'a> {
     }
 
     fn prepare_stage(&mut self, stage: &'a EncodedStage) {
-        let output_texture = self.create_output_texture(stage);
+        let output_dimensions = self.max_dimensions.min(stage.output_dimensions);
+        let output_texture = self.create_output_texture(output_dimensions);
         let bind_group = self.create_stage_bind_group(&output_texture);
         self.bundle.stages.push(PreparedStage {
-            stage,
             output_texture,
             bind_group,
+            pipeline: Arc::clone(&stage.pipeline),
+            output_dimensions,
+            work_group_size: stage.work_group_size,
         });
     }
 
@@ -471,8 +485,8 @@ impl<'a> SequenceBundleEncoder<'a> {
         })
     }
 
-    fn create_output_texture(&self, stage: &EncodedStage) -> wgpu::Texture {
-        let desc = texture_descriptor(stage.output_dimensions);
+    fn create_output_texture(&self, size: u32) -> wgpu::Texture {
+        let desc = texture_descriptor(size);
         self.device.create_texture(&desc)
     }
 

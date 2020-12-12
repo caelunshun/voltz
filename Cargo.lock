@@ -2263,6 +2263,7 @@ dependencies = [
  "futures-executor",
  "image",
  "rand",
+ "rand_pcg",
  "renderdoc",
  "utils",
  "wgpu",

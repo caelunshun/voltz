@@ -24,7 +24,7 @@ fn main() -> anyhow::Result<()> {
     let generator = BiomeGenerator::new(&device);
 
     let start = Instant::now();
-    let bundle = generator.prepare(&device, 10);
+    let bundle = generator.prepare(&device, 10, 4096);
 
     let dim = bundle.output_size();
     let output_texture = bundle.output_texture();
