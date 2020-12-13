@@ -182,3 +182,15 @@ vec2 cellularNoise2D(vec2 P) {
   d1.y = min(d1.y, d2.x);                // F2 is in d1.y, we're done.
   return sqrt(d1.xy);
 }
+
+float fbm3D(vec3 pos, uint octaves, float lacunarity, float gain) {
+  float result = 0;
+  float frequency = 1;
+  float amplitude = 0.5;
+  for (int i = 0; i < octaves; i++) {
+    result += simplexNoise3D(pos * frequency) * amplitude;
+    frequency *= lacunarity;
+    amplitude *= gain;
+  }
+  return result;
+}

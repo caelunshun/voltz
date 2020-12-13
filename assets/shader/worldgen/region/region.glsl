@@ -21,23 +21,23 @@ layout (set = 0, binding = 1, r8ui) uniform readonly restrict uimage2D uBiomeGri
 const float[NUM_BIOMES] cBiomeFrequencies = {
     0.0, // ocean
     0.02, // plains
-    0.04, // hills
+    0.01, // hills
     0.01, // desert
     0.03, // forest
 };
 
 const float[NUM_BIOMES] cBiomeAmplitudes = {
     1.0, // ocean
-    1.2, // plains
-    1.3, // hills
-    1.1, // desert
-    1.25, // forest
+    0.01, // plains
+    0.15, // hills
+    0.2, // desert
+    0.15, // forest
 };
 
 const float[NUM_BIOMES] cBiomeMidpoints = {
     64.0, // ocean
     64.0, // plains
-    70.0, // hills
+    90.0, // hills
     65.0, // desert
     66.0, // forest
 };
@@ -56,19 +56,45 @@ shared float amplitude;
 shared float midpoint;
 shared uint biomeBlock;
 
+shared float[81] amplitudeSamples;
+shared float[81] midpointSamples;
+shared float[81] weights;
+
 void main() {
     uvec3 pos = gl_GlobalInvocationID;
 
-    if (gl_WorkGroupID.y == 0) {
-        biome = imageLoad(uBiomeGrid, ivec2(pos.xz)).x;
-        frequency = cBiomeFrequencies[biome];
-        amplitude = cBiomeAmplitudes[biome];
-        midpoint = cBiomeMidpoints[biome];
-        biomeBlock = cBiomeBlocks[biome];
+    uint id = gl_LocalInvocationID.y;
+    if (id < 81) {
+        ivec2 offset = ivec2(id / 9, id % 9) - ivec2(4, 4);
+        float weight = 10 / (length(vec2(offset)) + 1);
+        uint biomeSample = imageLoad(uBiomeGrid, ivec2(pos.xz) + offset).x;
+
+        amplitudeSamples[id] = cBiomeAmplitudes[biomeSample] * weight;
+        midpointSamples[id] = cBiomeMidpoints[biomeSample] * weight;
+        weights[id] = weight;
+
+        if (offset == ivec2(0, 0)) {
+            biome = biomeSample;
+            biomeBlock = cBiomeBlocks[biomeSample];
+            frequency = cBiomeFrequencies[biomeSample];
+        }
+    }
+    barrier();
+    if (id == 0) {
+        float amp = 0;
+        float mid = 0;
+        float weightSum = 0;
+        for (int i = 0; i < 81; i++) {
+            amp += amplitudeSamples[i];
+            mid += midpointSamples[i];
+            weightSum += weights[i];
+        }
+        amplitude = amp / weightSum;
+        midpoint = mid / weightSum;
     }
     barrier();
 
-    float noiseValue = simplexNoise3D(pos * frequency);
+    float noiseValue = fbm3D(pos * frequency, 3, 2.0, 0.5) + 1;
 
     float gradient = (pos.y - midpoint) * amplitude;
 
