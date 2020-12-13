@@ -22,8 +22,8 @@ const SAMPLE_COUNT: u32 = 2;
 #[derive(Debug)]
 pub struct Resources {
     adapter: wgpu::Adapter,
-    device: wgpu::Device,
-    queue: wgpu::Queue,
+    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
     surface: wgpu::Surface,
 }
 
@@ -90,8 +90,8 @@ impl Renderer {
 
         let resources = Arc::new(Resources {
             adapter,
-            device,
-            queue,
+            device: Arc::new(device),
+            queue: Arc::new(queue),
             surface,
         });
 
@@ -117,6 +117,8 @@ impl Renderer {
 
         resources.queue().submit(vec![init_encoder.finish()]);
 
+        common::gpu::launch_poll_thread(&resources.device);
+
         Ok(Self {
             resources,
             chunk_renderer,
@@ -128,6 +130,14 @@ impl Renderer {
     pub fn setup(self, systems: &mut SystemExecutor<Game>, game: &mut Game) {
         game.debug_data.adapter = Some(self.resources.adapter().get_info());
         systems.add(self);
+    }
+
+    pub fn device_arc(&self) -> &Arc<wgpu::Device> {
+        &self.resources.device
+    }
+
+    pub fn queue_arc(&self) -> &Arc<wgpu::Queue> {
+        &self.resources.queue
     }
 
     fn on_resize(&mut self, new_width: u32, new_height: u32) {

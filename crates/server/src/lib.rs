@@ -1,15 +1,18 @@
 #![feature(allocator_api)]
 
 use std::{
-    panic, thread,
+    panic,
+    sync::Arc,
+    thread,
     time::{Duration, Instant},
 };
 
-use common::{world::ZoneBuilder, Chunk, ChunkPos, SystemExecutor, Zone};
+use common::{world::ZoneBuilder, ChunkPos, SystemExecutor, Zone};
 pub use conn::Connection;
 use game::Game;
 use panic::AssertUnwindSafe;
 use protocol::{bridge::ToClient, Bridge};
+use worldgen::WorldGenerator;
 
 mod conn;
 mod event;
@@ -33,24 +36,33 @@ pub struct Server {
     clients: Vec<Connection>,
     game: Game,
     systems: SystemExecutor<Game>,
+
+    world_generator: Arc<WorldGenerator>,
 }
 
 impl Server {
     /// Creates a new `Server` with the given set of initial clients.
     ///
     /// This is an expensive operation: we have to generate the world.
-    pub fn new(clients: Vec<Connection>) -> Self {
+    pub fn new(
+        clients: Vec<Connection>,
+        device: &Arc<wgpu::Device>,
+        queue: &Arc<wgpu::Queue>,
+    ) -> Self {
+        let world_generator = Arc::new(WorldGenerator::new(device, queue));
         log::info!("Generating world...");
         let start = Instant::now();
-        let main_zone = generate_world();
+        let main_zone = generate_world(&world_generator);
         log::info!("World generated in {:?}", start.elapsed());
 
         let game = Game::new(main_zone);
         let systems = setup();
+
         Self {
             clients,
             game,
             systems,
+            world_generator,
         }
     }
 
@@ -96,32 +108,17 @@ impl Server {
     }
 }
 
-fn generate_world() -> Zone {
+fn generate_world(world_generator: &WorldGenerator) -> Zone {
     let mut builder = ZoneBuilder::new(
+        ChunkPos { x: 0, y: 0, z: 0 },
         ChunkPos {
-            x: -WORLD_SIZE,
-            y: 0,
-            z: -WORLD_SIZE,
-        },
-        ChunkPos {
-            x: WORLD_SIZE,
+            x: WORLD_SIZE - 1,
             y: 15,
-            z: WORLD_SIZE,
+            z: WORLD_SIZE - 1,
         },
     );
-
-    for x in -WORLD_SIZE..=WORLD_SIZE {
-        for y in 0..16 {
-            for z in -WORLD_SIZE..=WORLD_SIZE {
-                let chunk = Chunk::new();
-                builder.add_chunk(ChunkPos { x, y, z }, chunk).unwrap();
-            }
-        }
-    }
-
-    let mut zone = builder.build().ok().expect("failed to generate all chunks");
-    worldgen::generate(&mut zone, worldgen::Settings { seed: 11 });
-    zone
+    world_generator.generate_into_zone(&mut builder, 10);
+    builder.build().ok().expect("failed to create all chunks")
 }
 
 fn setup() -> SystemExecutor<Game> {

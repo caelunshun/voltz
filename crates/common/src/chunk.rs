@@ -60,6 +60,12 @@ pub struct Chunk {
     palette: Vec<BlockId>,
 }
 
+impl Default for Chunk {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Chunk {
     /// Creates a new chunk initialized with air.
     pub fn new() -> Self {

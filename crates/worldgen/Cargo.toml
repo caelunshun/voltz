@@ -13,8 +13,10 @@ bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-a
 anyhow = "1"
 rand = "0.7"
 rand_pcg = "0.2"
+rayon = "1"
+once_cell = "1"
+futures-executor = "0.3"
 
 [dev-dependencies]
 image = { version = "0.23", default-features = false, features = ["png"] }
-futures-executor = "0.3"
 renderdoc = "0.9"

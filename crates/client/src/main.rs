@@ -1,7 +1,7 @@
 #![feature(type_name_of_val, allocator_api, format_args_capture)]
 #![allow(dead_code)]
 
-use std::{alloc::System, thread, time::Instant};
+use std::{alloc::System, sync::Arc, thread, time::Instant};
 
 use anyhow::{bail, Context};
 use asset::{
@@ -115,7 +115,7 @@ fn main() -> anyhow::Result<()> {
     let (window, event_loop) = init_window()?;
     let renderer = Renderer::new(&window, &assets).context("failed to intiailize wgpu renderer")?;
 
-    let bridge = launch_server()?;
+    let bridge = launch_server(&renderer)?;
     let (pos, orient, vel) = log_in(&bridge).context("failed to connect to integrated server")?;
     let conn = Connection::new(bridge.clone());
     let mut game = Game::new(bridge, (pos, orient, vel, PLAYER_BBOX), window, Bump::new());
@@ -159,15 +159,18 @@ fn init_window() -> anyhow::Result<(Window, EventLoop<()>)> {
     Ok((window, event_loop))
 }
 
-fn launch_server() -> anyhow::Result<Bridge<ToServer>> {
+fn launch_server(renderer: &Renderer) -> anyhow::Result<Bridge<ToServer>> {
     let (client_bridge, server_bridge) = bridge::singleplayer();
 
     let conn = server::Connection::new(server_bridge);
 
+    let device = Arc::clone(renderer.device_arc());
+    let queue = Arc::clone(renderer.queue_arc());
+
     thread::Builder::new()
         .name("integrated-server".to_owned())
         .spawn(move || {
-            let mut server = Server::new(vec![conn]);
+            let mut server = Server::new(vec![conn], &device, &queue);
             server.run();
         })?;
 

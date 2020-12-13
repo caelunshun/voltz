@@ -21,3 +21,11 @@ pub struct Grass;
 #[derive(Block)]
 #[block(slug = "melium", display_name = "Melium")]
 pub struct Melium;
+
+#[derive(Block)]
+#[block(slug = "sand", display_name = "Sand")]
+pub struct Sand;
+
+#[derive(Block)]
+#[block(slug = "water", display_name = "Water")]
+pub struct Water;

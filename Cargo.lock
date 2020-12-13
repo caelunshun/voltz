@@ -1747,6 +1747,7 @@ dependencies = [
  "rand",
  "rand_pcg",
  "rayon",
+ "wgpu",
  "worldgen",
 ]
 
@@ -2262,8 +2263,10 @@ dependencies = [
  "common",
  "futures-executor",
  "image",
+ "once_cell",
  "rand",
  "rand_pcg",
+ "rayon",
  "renderdoc",
  "utils",
  "wgpu",

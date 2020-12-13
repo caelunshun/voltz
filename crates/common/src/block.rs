@@ -62,7 +62,9 @@ static REGISTRY: Lazy<Registry> = Lazy::new(|| {
         .register::<Dirt>()
         .register::<Stone>()
         .register::<Grass>()
-        .register::<Melium>();
+        .register::<Melium>()
+        .register::<Sand>()
+        .register::<Water>();
 
     registry
 });
