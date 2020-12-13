@@ -17,7 +17,7 @@ layout (
 ) in;
 
 layout (set = 0, binding = 0, r8ui) uniform readonly uimage2D uInputGrid;
-layout (set = 0, binding = 1) uniform writeonly uimage2D uOutputGrid;
+layout (set = 0, binding = 1, r8ui) uniform writeonly uimage2D uOutputGrid;
 
 layout (push_constant) uniform PushConstants {
     uint uSeed;

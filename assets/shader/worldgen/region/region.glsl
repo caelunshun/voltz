@@ -27,11 +27,11 @@ const float[NUM_BIOMES] cBiomeFrequencies = {
 };
 
 const float[NUM_BIOMES] cBiomeAmplitudes = {
-    0.0, // ocean
-    0.2, // plains
-    0.3, // hills
-    0.1, // desert
-    0.25, // forest
+    1.0, // ocean
+    1.2, // plains
+    1.3, // hills
+    1.1, // desert
+    1.25, // forest
 };
 
 const float[NUM_BIOMES] cBiomeMidpoints = {
@@ -73,7 +73,7 @@ void main() {
     float gradient = (pos.y - midpoint) * amplitude;
 
     if (gradient < 0.0) {
-        gradient *= -4.0;
+        gradient *= 4.0;
     }
 
     float density = noiseValue + gradient;
