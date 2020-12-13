@@ -28,7 +28,7 @@ const float[NUM_BIOMES] cBiomeFrequencies = {
 
 const float[NUM_BIOMES] cBiomeAmplitudes = {
     1.0, // ocean
-    0.01, // plains
+    0.1, // plains
     0.15, // hills
     0.2, // desert
     0.15, // forest
@@ -56,16 +56,16 @@ shared float amplitude;
 shared float midpoint;
 shared uint biomeBlock;
 
-shared float[81] amplitudeSamples;
-shared float[81] midpointSamples;
-shared float[81] weights;
+shared float[225] amplitudeSamples;
+shared float[225] midpointSamples;
+shared float[225] weights;
 
 void main() {
     uvec3 pos = gl_GlobalInvocationID;
 
     uint id = gl_LocalInvocationID.y;
-    if (id < 81) {
-        ivec2 offset = ivec2(id / 9, id % 9) - ivec2(4, 4);
+    if (id < 225) {
+        ivec2 offset = ivec2(id / 15, id % 15) - ivec2(7, 7);
         float weight = 10 / (length(vec2(offset)) + 1);
         uint biomeSample = imageLoad(uBiomeGrid, ivec2(pos.xz) + offset).x;
 
@@ -84,7 +84,7 @@ void main() {
         float amp = 0;
         float mid = 0;
         float weightSum = 0;
-        for (int i = 0; i < 81; i++) {
+        for (int i = 0; i < 225; i++) {
             amp += amplitudeSamples[i];
             mid += midpointSamples[i];
             weightSum += weights[i];
