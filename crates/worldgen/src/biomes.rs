@@ -197,9 +197,9 @@ impl Pipelines {
                     binding: 0,
                     visibility: wgpu::ShaderStage::COMPUTE,
                     ty: wgpu::BindingType::StorageTexture {
-                        dimension: wgpu::TextureViewDimension::D2,
                         format: BIOME_GRID_FORMAT,
-                        readonly: true,
+                        access: wgpu::StorageTextureAccess::ReadOnly,
+                        view_dimension: wgpu::TextureViewDimension::D2,
                     },
                     count: None,
                 },
@@ -207,9 +207,9 @@ impl Pipelines {
                     binding: 1,
                     visibility: wgpu::ShaderStage::COMPUTE,
                     ty: wgpu::BindingType::StorageTexture {
-                        dimension: wgpu::TextureViewDimension::D2,
                         format: BIOME_GRID_FORMAT,
-                        readonly: false,
+                        access: wgpu::StorageTextureAccess::WriteOnly,
+                        view_dimension: wgpu::TextureViewDimension::D2,
                     },
                     count: None,
                 },
@@ -253,7 +253,7 @@ impl Pipelines {
     fn create_pipeline(
         device: &wgpu::Device,
         bg_layout: &wgpu::BindGroupLayout,
-        shader_source: wgpu::ShaderModuleSource,
+        shader_source: wgpu::ShaderModuleDescriptor,
     ) -> Arc<wgpu::ComputePipeline> {
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: None,
@@ -263,7 +263,7 @@ impl Pipelines {
                 range: 0..size_of::<PushConstants>() as u32,
             }],
         });
-        let module = device.create_shader_module(shader_source);
+        let module = device.create_shader_module(&shader_source);
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: None,
             layout: Some(&layout),

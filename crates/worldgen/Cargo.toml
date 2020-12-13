@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 common = { path = "../common" }
 utils = { path = "../utils" }
-wgpu = "0.6"
+wgpu = { git = "https://github.com/gfx-rs/wgpu-rs" }
 bytemuck = { version = "1", features = ["derive"] }
 bumpalo = { git = "https://github.com/caelunshun/bumpalo", branch = "allocator-api" }
 anyhow = "1"

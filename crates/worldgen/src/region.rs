@@ -134,10 +134,10 @@ impl RegionGenerator {
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStage::COMPUTE,
-                    ty: wgpu::BindingType::StorageBuffer {
-                        dynamic: false,
+                    ty: wgpu::BindingType::Buffer {
                         min_binding_size: None,
-                        readonly: false,
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
                     },
                     count: None,
                 },
@@ -146,9 +146,9 @@ impl RegionGenerator {
                     binding: 1,
                     visibility: wgpu::ShaderStage::COMPUTE,
                     ty: wgpu::BindingType::StorageTexture {
-                        dimension: wgpu::TextureViewDimension::D2,
+                        view_dimension: wgpu::TextureViewDimension::D2,
                         format: BIOME_GRID_FORMAT,
-                        readonly: true,
+                        access: wgpu::StorageTextureAccess::ReadOnly,
                     },
                     count: None,
                 },
@@ -161,7 +161,7 @@ impl RegionGenerator {
         bg_layout: &wgpu::BindGroupLayout,
     ) -> wgpu::ComputePipeline {
         let layout = Self::create_pipeline_layout(device, bg_layout);
-        let module = device.create_shader_module(wgpu::include_spirv!(
+        let module = device.create_shader_module(&wgpu::include_spirv!(
             "../../../assets/shader/worldgen/region/region.spv"
         ));
         device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
@@ -206,7 +206,11 @@ impl RegionGenerator {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::Buffer(block_buffer.slice(..)),
+                    resource: wgpu::BindingResource::Buffer {
+                        buffer: block_buffer,
+                        offset: 0,
+                        size: None,
+                    },
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,

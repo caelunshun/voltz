@@ -14,7 +14,7 @@ utils = { path = "../utils" }
 voltzui = { path = "../ui" }
 hecs = { version = "0.3", features = ["macros"] }
 
-wgpu = "0.6"
+wgpu = { git = "https://github.com/gfx-rs/wgpu-rs" }
 winit = { version = "0.24", default-features = false, features = ["x11"] }
 glam = { version = "0.11", features = ["bytemuck"] }
 splines = { version = "3", features = ["impl-glam"] }

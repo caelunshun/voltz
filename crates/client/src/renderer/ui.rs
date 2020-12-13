@@ -46,17 +46,20 @@ impl UiRenderer {
                     entries: &[
                         wgpu::BindGroupLayoutEntry {
                             binding: 0,
-                            ty: wgpu::BindingType::SampledTexture {
-                                dimension: wgpu::TextureViewDimension::D2,
-                                component_type: wgpu::TextureComponentType::Float,
+                            ty: wgpu::BindingType::Texture {
+                                view_dimension: wgpu::TextureViewDimension::D2,
                                 multisampled: false,
+                                sample_type: wgpu::TextureSampleType::Float { filterable: false },
                             },
                             count: None,
                             visibility: wgpu::ShaderStage::FRAGMENT,
                         },
                         wgpu::BindGroupLayoutEntry {
                             binding: 1,
-                            ty: wgpu::BindingType::Sampler { comparison: false },
+                            ty: wgpu::BindingType::Sampler {
+                                comparison: false,
+                                filtering: false,
+                            },
                             count: None,
                             visibility: wgpu::ShaderStage::FRAGMENT,
                         },
@@ -70,8 +73,21 @@ impl UiRenderer {
             .get::<ShaderAsset>("shader_compiled/blit/fragment.spv")?
             .to_source();
 
-        let vertex_stage = resources.device().create_shader_module(vertex_stage);
-        let fragment_stage = resources.device().create_shader_module(fragment_stage);
+        let vertex_stage = resources
+            .device()
+            .create_shader_module(&wgpu::ShaderModuleDescriptor {
+                label: None,
+                source: vertex_stage,
+                experimental_translation: false,
+            });
+        let fragment_stage =
+            resources
+                .device()
+                .create_shader_module(&wgpu::ShaderModuleDescriptor {
+                    label: None,
+                    source: fragment_stage,
+                    experimental_translation: false,
+                });
 
         let pipeline_layout =
             resources
@@ -111,7 +127,7 @@ impl UiRenderer {
                 }],
                 depth_stencil_state: None,
                 vertex_state: wgpu::VertexStateDescriptor {
-                    index_format: wgpu::IndexFormat::Uint16,
+                    index_format: None,
                     vertex_buffers: &[],
                 },
                 sample_count: 1,
@@ -131,6 +147,7 @@ impl UiRenderer {
             lod_max_clamp: 100.,
             compare: None,
             anisotropy_clamp: None,
+            border_color: None,
         });
 
         Ok(Self {

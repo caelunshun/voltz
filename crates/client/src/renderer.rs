@@ -75,6 +75,7 @@ impl Renderer {
 
         let (device, queue) = block_on(adapter.request_device(
             &wgpu::DeviceDescriptor {
+                label: None,
                 features: wgpu::Features::PUSH_CONSTANTS,
                 limits: wgpu::Limits {
                     max_push_constant_size: 256,
@@ -116,8 +117,6 @@ impl Renderer {
             UiRenderer::new(&resources, assets).context("failed to initialize UI renderer")?;
 
         resources.queue().submit(vec![init_encoder.finish()]);
-
-        common::gpu::launch_poll_thread(&resources.device);
 
         Ok(Self {
             resources,
