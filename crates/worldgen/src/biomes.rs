@@ -119,6 +119,7 @@ impl BiomeGenerator {
             .push(Smooth)
             .push(Zoom)
             .push(Smooth)
+            .push(Rivers)
             .push(Zoom)
             .push(Smooth)
             .push(Zoom)
@@ -171,6 +172,7 @@ struct Pipelines {
     zoom: Arc<wgpu::ComputePipeline>,
     smooth: Arc<wgpu::ComputePipeline>,
     land: Arc<wgpu::ComputePipeline>,
+    rivers: Arc<wgpu::ComputePipeline>,
     bg_layout: wgpu::BindGroupLayout,
 }
 
@@ -180,11 +182,13 @@ impl Pipelines {
         let zoom = Self::create_zoom_pipeline(device, &bg_layout);
         let smooth = Self::create_smooth_pipeline(device, &bg_layout);
         let land = Self::create_land_pipeline(device, &bg_layout);
+        let rivers = Self::create_rivers_pipeline(device, &bg_layout);
 
         Self {
             zoom,
             smooth,
             land,
+            rivers,
             bg_layout,
         }
     }
@@ -247,6 +251,17 @@ impl Pipelines {
             device,
             bg_layout,
             wgpu::include_spirv!("../../../assets/shader/worldgen/biomegrid/land.spv"),
+        )
+    }
+
+    fn create_rivers_pipeline(
+        device: &wgpu::Device,
+        bg_layout: &wgpu::BindGroupLayout,
+    ) -> Arc<wgpu::ComputePipeline> {
+        Self::create_pipeline(
+            device,
+            bg_layout,
+            wgpu::include_spirv!("../../../assets/shader/worldgen/biomegrid/rivers.spv"),
         )
     }
 
@@ -358,6 +373,22 @@ impl Stage for Land {
 
     fn pipeline<'a>(&self, pipelines: &'a Pipelines) -> &'a Arc<wgpu::ComputePipeline> {
         &pipelines.land
+    }
+}
+
+struct Rivers;
+
+impl Stage for Rivers {
+    fn output_dimensions(&self, input_dimensions: u32) -> u32 {
+        input_dimensions - 2
+    }
+
+    fn work_group_size(&self) -> [u32; 2] {
+        [16; 2]
+    }
+
+    fn pipeline<'a>(&self, pipelines: &'a Pipelines) -> &'a Arc<wgpu::ComputePipeline> {
+        &pipelines.rivers
     }
 }
 

@@ -20,26 +20,29 @@ layout (set = 0, binding = 1, r8ui) uniform readonly restrict uimage2D uBiomeGri
 
 const float[NUM_BIOMES] cBiomeFrequencies = {
     0.0, // ocean
-    0.02, // plains
-    0.01, // hills
+    0.005, // plains
+    0.012, // hills
     0.01, // desert
-    0.03, // forest
+    0.011, // forest
+    0.0, // river
 };
 
 const float[NUM_BIOMES] cBiomeAmplitudes = {
     1.0, // ocean
-    0.1, // plains
-    0.15, // hills
+    0.07, // plains
+    0.025, // hills
     0.2, // desert
     0.15, // forest
+    1.0, // river
 };
 
 const float[NUM_BIOMES] cBiomeMidpoints = {
     64.0, // ocean
     64.0, // plains
-    90.0, // hills
+    75.0, // hills
     65.0, // desert
     66.0, // forest
+    64.0, // river
 };
 
 const uint[NUM_BIOMES] cBiomeBlocks = {
@@ -48,6 +51,7 @@ const uint[NUM_BIOMES] cBiomeBlocks = {
     BLOCK_MELIUM, // hills
     BLOCK_SAND, // desert
     BLOCK_STONE, // forest
+    BLOCK_WATER, // river
 };
 
 shared uint biome;
@@ -94,7 +98,10 @@ void main() {
     }
     barrier();
 
-    float noiseValue = fbm3D(pos * frequency, 3, 2.0, 0.5) + 1;
+    float noiseValue1 = fbm3D(pos * frequency, 2, 2.0, 0.5);
+    float noiseValue2 = fbm3D(pos * frequency + vec3(0, 1000, 0), 2, 2.0, 0.5);
+    float choiceNoise = fbm3D(pos * 0.005, 2, 2.0, 0.5);
+    float noiseValue = mix(noiseValue1, noiseValue2, choiceNoise);
 
     float gradient = (pos.y - midpoint) * amplitude;
 

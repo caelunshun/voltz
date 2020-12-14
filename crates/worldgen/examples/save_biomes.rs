@@ -125,6 +125,8 @@ fn main() -> anyhow::Result<()> {
                 Rgba([200, 180, 20, u8::MAX])
             } else if src == 4 {
                 Rgba([40, 140, 20, u8::MAX])
+            } else if src == 5 {
+                Rgba([40, 40, 160, u8::MAX])
             } else {
                 panic!("unexpected biome value {}", src)
             };
