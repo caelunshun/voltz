@@ -117,7 +117,7 @@ fn generate_world(world_generator: &WorldGenerator) -> Zone {
             z: WORLD_SIZE - 1,
         },
     );
-    world_generator.generate_into_zone(&mut builder, 324);
+    world_generator.generate_into_zone(&mut builder, 6256);
     builder.build().ok().expect("failed to create all chunks")
 }
 

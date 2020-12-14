@@ -289,7 +289,7 @@ impl ChunkRenderer {
 /// A fixed dimension used for block textures. Block textures
 /// must match this dimension exactly.
 const BLOCK_TEXTURE_DIM: u32 = 64;
-const MIP_LEVELS: u32 = 6;
+const MIP_LEVELS: u32 = 7;
 
 fn create_block_textures(
     resources: &Arc<Resources>,
