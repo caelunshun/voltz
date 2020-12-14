@@ -236,9 +236,16 @@ impl ChunkRenderer {
         let pos = *game.player_ref().get::<Pos>().unwrap();
         let player_chunk = ChunkPos::from_pos(pos);
 
-        // Render each chunk.
-        self.culler.update(player_chunk, game.bump());
-        let visible = self.culler.visible_chunks();
+        #[cfg(debug_assertions)]
+        let visible = {
+            // Culling disabled in debug mode - it's too slow.
+            self.chunks.keys().copied()
+        };
+        #[cfg(not(debug_assertions))]
+        let visible = {
+            self.culler.update(player_chunk, game.bump());
+            self.culler.visible_chunks()
+        };
 
         let mut count = 0;
         for pos in visible {
