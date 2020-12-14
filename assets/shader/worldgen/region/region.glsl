@@ -59,10 +59,12 @@ shared float frequency;
 shared float amplitude;
 shared float midpoint;
 shared uint biomeBlock;
+shared uint waterReplacementBlock;
 
 shared float[225] amplitudeSamples;
 shared float[225] midpointSamples;
 shared float[225] weights;
+shared uint[255] biomeBlocks;
 
 void main() {
     uvec3 pos = gl_GlobalInvocationID;
@@ -76,6 +78,7 @@ void main() {
         amplitudeSamples[id] = cBiomeAmplitudes[biomeSample] * weight;
         midpointSamples[id] = cBiomeMidpoints[biomeSample] * weight;
         weights[id] = weight;
+        biomeBlocks[id] = cBiomeBlocks[biomeSample];
 
         if (offset == ivec2(0, 0)) {
             biome = biomeSample;
@@ -88,10 +91,15 @@ void main() {
         float amp = 0;
         float mid = 0;
         float weightSum = 0;
+        waterReplacementBlock = biomeBlock;
         for (int i = 0; i < 225; i++) {
             amp += amplitudeSamples[i];
             mid += midpointSamples[i];
             weightSum += weights[i];
+
+            if (biomeBlock == BLOCK_WATER && biomeBlocks[i] != BLOCK_WATER) {
+                waterReplacementBlock = biomeBlocks[i];
+            }
         }
         amplitude = amp / weightSum;
         midpoint = mid / weightSum;
@@ -103,17 +111,21 @@ void main() {
     float choiceNoise = fbm3D(pos * 0.005, 2, 2.0, 0.5);
     float noiseValue = mix(noiseValue1, noiseValue2, choiceNoise);
 
-    float gradient = (pos.y - midpoint) * amplitude;
+    float gradient = (pos.y - midpoint + 1) * amplitude;
 
     if (gradient < 0.0) {
         gradient *= 4.0;
     }
 
-    float density = noiseValue + gradient;
+    float density = -abs(noiseValue) + gradient;
 
     uint block;
     if (density < 0.0) {
-        block = biomeBlock;
+        if (pos.y >= 64) {
+            block = waterReplacementBlock;
+        } else {
+            block = biomeBlock;
+        }
     } else {
         block = BLOCK_AIR;
     }
