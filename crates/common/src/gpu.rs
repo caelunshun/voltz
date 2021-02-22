@@ -24,6 +24,7 @@ pub fn init(
 
     let (device, queue) = block_on(adapter.request_device(
         &wgpu::DeviceDescriptor {
+            label: None,
             features: wgpu::Features::PUSH_CONSTANTS,
             limits: wgpu::Limits {
                 max_push_constant_size: 256,

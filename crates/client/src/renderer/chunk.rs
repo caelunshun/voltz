@@ -74,9 +74,9 @@ impl ChunkRenderer {
                         wgpu::BindGroupLayoutEntry {
                             binding: 0,
                             visibility: wgpu::ShaderStage::FRAGMENT,
-                            ty: wgpu::BindingType::SampledTexture {
-                                dimension: wgpu::TextureViewDimension::D2Array,
-                                component_type: wgpu::TextureComponentType::Float,
+                            ty: wgpu::BindingType::Texture {
+                                sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                                view_dimension: wgpu::TextureViewDimension::D2Array,
                                 multisampled: false,
                             },
                             count: None,
@@ -84,7 +84,10 @@ impl ChunkRenderer {
                         wgpu::BindGroupLayoutEntry {
                             binding: 1,
                             visibility: wgpu::ShaderStage::FRAGMENT,
-                            ty: wgpu::BindingType::Sampler { comparison: false },
+                            ty: wgpu::BindingType::Sampler {
+                                comparison: false,
+                                filtering: false,
+                            },
                             count: None,
                         },
                     ],
@@ -101,16 +104,24 @@ impl ChunkRenderer {
                         range: 0..(size_of::<Mat4>() as u32 * 2 + size_of::<Vec4>() as u32),
                     }],
                 });
-        let vertex = resources.device().create_shader_module(
-            assets
-                .get::<ShaderAsset>("shader_compiled/chunk/vertex.spv")?
-                .to_source(),
-        );
-        let fragment = resources.device().create_shader_module(
-            assets
-                .get::<ShaderAsset>("shader_compiled/chunk/fragment.spv")?
-                .to_source(),
-        );
+        let vertex = resources
+            .device()
+            .create_shader_module(&wgpu::ShaderModuleDescriptor {
+                source: assets
+                    .get::<ShaderAsset>("shader_compiled/chunk/vertex.spv")?
+                    .to_source(),
+                label: None,
+                experimental_translation: false,
+            });
+        let fragment = resources
+            .device()
+            .create_shader_module(&wgpu::ShaderModuleDescriptor {
+                source: assets
+                    .get::<ShaderAsset>("shader_compiled/chunk/fragment.spv")?
+                    .to_source(),
+                label: None,
+                experimental_translation: false,
+            });
         let pipeline = resources
             .device()
             .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -143,7 +154,7 @@ impl ChunkRenderer {
                     stencil: wgpu::StencilStateDescriptor::default(),
                 }),
                 vertex_state: wgpu::VertexStateDescriptor {
-                    index_format: wgpu::IndexFormat::Uint16,
+                    index_format: None,
                     vertex_buffers: &[wgpu::VertexBufferDescriptor {
                         stride: size_of::<RawVertex>() as _,
                         step_mode: wgpu::InputStepMode::Vertex,

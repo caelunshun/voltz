@@ -44,12 +44,12 @@ impl Server {
     /// Creates a new `Server` with the given set of initial clients.
     ///
     /// This is an expensive operation: we have to generate the world.
-    pub fn new(
-        clients: Vec<Connection>,
-        device: &Arc<wgpu::Device>,
-        queue: &Arc<wgpu::Queue>,
-    ) -> Self {
-        let world_generator = Arc::new(WorldGenerator::new(device, queue));
+    pub fn new(clients: Vec<Connection>) -> anyhow::Result<Self> {
+        let (device, queue, _) =
+            common::gpu::init(wgpu::Instance::new(wgpu::BackendBit::PRIMARY), None)?;
+        let device = Arc::new(device);
+        common::gpu::launch_poll_thread(&device);
+        let world_generator = Arc::new(WorldGenerator::new(&device, &Arc::new(queue)));
         log::info!("Generating world...");
         let start = Instant::now();
         let main_zone = generate_world(&world_generator);
@@ -58,12 +58,12 @@ impl Server {
         let game = Game::new(main_zone);
         let systems = setup();
 
-        Self {
+        Ok(Self {
             clients,
             game,
             systems,
             world_generator,
-        }
+        })
     }
 
     /// Runs the server.

@@ -13,7 +13,7 @@ pub struct Presenter {
 impl Presenter {
     pub fn new(device: &wgpu::Device, surface: &wgpu::Surface, width: u32, height: u32) -> Self {
         let sc_desc = wgpu::SwapChainDescriptor {
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT,
             format: SC_FORMAT,
             width,
             height,
@@ -32,7 +32,7 @@ impl Presenter {
             sample_count: SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
             format: SC_FORMAT,
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::SAMPLED,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT | wgpu::TextureUsage::SAMPLED,
         });
         let sample_buffer_view = sample_buffer.create_view(&Default::default());
 
@@ -47,7 +47,7 @@ impl Presenter {
             sample_count: SAMPLE_COUNT,
             dimension: wgpu::TextureDimension::D2,
             format: DEPTH_FORMAT,
-            usage: wgpu::TextureUsage::OUTPUT_ATTACHMENT | wgpu::TextureUsage::SAMPLED,
+            usage: wgpu::TextureUsage::RENDER_ATTACHMENT | wgpu::TextureUsage::SAMPLED,
         });
         let depth_buffer_view = depth_buffer.create_view(&Default::default());
 

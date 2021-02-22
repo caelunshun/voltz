@@ -3,14 +3,14 @@ use std::any::Any;
 use super::AssetLoader;
 
 /// A SPIR-V shader.
-pub struct ShaderAsset(wgpu::ShaderModuleSource<'static>);
+pub struct ShaderAsset(wgpu::ShaderSource<'static>);
 
 impl ShaderAsset {
     /// Gets the SPIRV data.
-    pub fn to_source(&self) -> wgpu::ShaderModuleSource<'static> {
+    pub fn to_source(&self) -> wgpu::ShaderSource<'static> {
         match &self.0 {
-            wgpu::ShaderModuleSource::SpirV(spv) => wgpu::ShaderModuleSource::SpirV(spv.clone()),
-            wgpu::ShaderModuleSource::Wgsl(wgsl) => wgpu::ShaderModuleSource::Wgsl(wgsl.clone()),
+            wgpu::ShaderSource::SpirV(spv) => wgpu::ShaderSource::SpirV(spv.clone()),
+            wgpu::ShaderSource::Wgsl(wgsl) => wgpu::ShaderSource::Wgsl(wgsl.clone()),
         }
     }
 }
@@ -29,12 +29,8 @@ impl AssetLoader for SpirvLoader {
         let source = wgpu::util::make_spirv(data);
         // Make source 'static
         let source = match source {
-            wgpu::ShaderModuleSource::SpirV(spv) => {
-                wgpu::ShaderModuleSource::SpirV(spv.into_owned().into())
-            }
-            wgpu::ShaderModuleSource::Wgsl(wgsl) => {
-                wgpu::ShaderModuleSource::Wgsl(wgsl.into_owned().into())
-            }
+            wgpu::ShaderSource::SpirV(spv) => wgpu::ShaderSource::SpirV(spv.into_owned().into()),
+            wgpu::ShaderSource::Wgsl(wgsl) => wgpu::ShaderSource::Wgsl(wgsl.into_owned().into()),
         };
         Ok(Box::new(ShaderAsset(source)))
     }
